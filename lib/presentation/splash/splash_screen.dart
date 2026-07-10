@@ -28,7 +28,7 @@ class SplashScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             const Text(
-              'BLW Recipes',
+              'Bitty Bellies',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 32,

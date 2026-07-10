@@ -1,7 +1,7 @@
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'BLW Recipes';
+  static const String appName = 'Bitty Bellies';
   static const String appTagline = 'Baby-led weaning, made global.';
 
   // Pagination
