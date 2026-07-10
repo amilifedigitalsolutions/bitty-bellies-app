@@ -1,0 +1,35 @@
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.g.dart
+*.freezed.dart
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+**/android/app/google-services.json
+
+# CDK
+infrastructure/cdk/node_modules/
+infrastructure/cdk/cdk.out/
+infrastructure/cdk/**/*.js
+infrastructure/cdk/**/*.d.ts
+!infrastructure/cdk/cdk.json
+
+# Secrets — never commit real keys
+
+# macOS
+.DS_Store

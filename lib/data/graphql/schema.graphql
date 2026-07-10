@@ -1,0 +1,412 @@
+type UserProfile {
+  id: ID!
+  displayName: String!
+  email: AWSEmail!
+  bio: String
+  avatarUrl: AWSURL
+  country: String
+  region: String
+  culturalBackground: String
+  cookingStyle: String
+  savedRecipesCount: Int
+  uploadedRecipesCount: Int
+  isVerifiedCreator: Boolean
+  isModerator: Boolean
+  isAdmin: Boolean
+  isActive: Boolean
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime
+}
+
+type Recipe {
+  id: ID!
+  title: String!
+  description: String!
+  creatorId: ID!
+  creatorName: String!
+  creatorAvatarUrl: AWSURL
+  ingredients: AWSJSON
+  steps: AWSJSON
+  prepTimeMinutes: Int!
+  cookTimeMinutes: Int!
+  servings: Int
+  ageStage: String!
+  texture: String!
+  cuisine: String!
+  cultureRegion: String
+  mealCategories: [String]
+  dietTypes: [String]
+  allergens: [String]
+  chokingHazardNotes: String
+  safetyNotes: String
+  storageReheatingNotes: String
+  creatorNotes: String
+  status: RecipeStatus!
+  tags: [String]
+  savedCount: Int
+  commentCount: Int
+  feedbackCount: Int
+  questionCount: Int
+  averageRating: Float
+  isSponsored: Boolean
+  sponsorId: ID
+  isPremium: Boolean
+  moderationNote: String
+  moderatedBy: ID
+  publishedAt: AWSDateTime
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime
+  media: [RecipeMedia]
+}
+
+enum RecipeStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  REMOVED
+}
+
+type RecipeMedia {
+  id: ID!
+  recipeId: ID!
+  s3Key: String!
+  url: AWSURL!
+  type: String
+  isCover: Boolean
+  sortOrder: Int
+  uploadedBy: ID!
+  createdAt: AWSDateTime!
+}
+
+type RecipeComment {
+  id: ID!
+  recipeId: ID!
+  authorId: ID!
+  authorName: String!
+  authorAvatarUrl: AWSURL
+  body: String!
+  parentCommentId: ID
+  isDeleted: Boolean
+  isHidden: Boolean
+  likeCount: Int
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime
+}
+
+type RecipeFeedback {
+  id: ID!
+  recipeId: ID!
+  authorId: ID!
+  authorName: String!
+  authorAvatarUrl: AWSURL
+  rating: Int!
+  triedIt: Boolean
+  babyReaction: String
+  modifications: String
+  notes: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime
+}
+
+type RecipeQuestion {
+  id: ID!
+  recipeId: ID!
+  authorId: ID!
+  authorName: String!
+  authorAvatarUrl: AWSURL
+  question: String!
+  isAnsweredByCreator: Boolean
+  creatorAnswer: String
+  answeredAt: AWSDateTime
+  isHidden: Boolean
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime
+}
+
+type RecipeReport {
+  id: ID!
+  recipeId: ID!
+  commentId: ID
+  questionId: ID
+  reporterId: ID!
+  reason: String!
+  details: String
+  status: ReportStatus
+  reviewedBy: ID
+  reviewedAt: AWSDateTime
+  createdAt: AWSDateTime!
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+type SavedRecipe {
+  id: ID!
+  userId: ID!
+  recipeId: ID!
+  savedAt: AWSDateTime!
+}
+
+type MonetizationPlacement {
+  id: ID!
+  type: String!
+  recipeId: ID
+  title: String
+  targetUrl: AWSURL
+  isActive: Boolean
+  startsAt: AWSDateTime
+  endsAt: AWSDateTime
+  createdAt: AWSDateTime!
+}
+
+type RecipeConnection {
+  items: [Recipe]
+  nextToken: String
+}
+
+type CommentConnection {
+  items: [RecipeComment]
+  nextToken: String
+}
+
+type FeedbackConnection {
+  items: [RecipeFeedback]
+  nextToken: String
+}
+
+type QuestionConnection {
+  items: [RecipeQuestion]
+  nextToken: String
+}
+
+type SavedRecipeConnection {
+  items: [SavedRecipe]
+  nextToken: String
+}
+
+input CreateUserProfileInput {
+  id: ID
+  displayName: String!
+  email: AWSEmail!
+  bio: String
+  avatarUrl: AWSURL
+  country: String
+  region: String
+  culturalBackground: String
+  cookingStyle: String
+  createdAt: AWSDateTime
+}
+
+input UpdateUserProfileInput {
+  id: ID!
+  displayName: String
+  bio: String
+  avatarUrl: AWSURL
+  country: String
+  region: String
+  culturalBackground: String
+  cookingStyle: String
+  updatedAt: AWSDateTime
+}
+
+input CreateRecipeInput {
+  id: ID
+  title: String!
+  description: String!
+  creatorId: ID!
+  creatorName: String!
+  creatorAvatarUrl: AWSURL
+  ingredients: AWSJSON
+  steps: AWSJSON
+  prepTimeMinutes: Int!
+  cookTimeMinutes: Int!
+  servings: Int
+  ageStage: String!
+  texture: String!
+  cuisine: String!
+  cultureRegion: String
+  mealCategories: [String]
+  dietTypes: [String]
+  allergens: [String]
+  chokingHazardNotes: String
+  safetyNotes: String
+  storageReheatingNotes: String
+  creatorNotes: String
+  status: RecipeStatus
+  tags: [String]
+  isSponsored: Boolean
+  isPremium: Boolean
+  createdAt: AWSDateTime
+}
+
+input UpdateRecipeInput {
+  id: ID!
+  title: String
+  description: String
+  ingredients: AWSJSON
+  steps: AWSJSON
+  prepTimeMinutes: Int
+  cookTimeMinutes: Int
+  servings: Int
+  ageStage: String
+  texture: String
+  cuisine: String
+  cultureRegion: String
+  mealCategories: [String]
+  dietTypes: [String]
+  allergens: [String]
+  chokingHazardNotes: String
+  safetyNotes: String
+  storageReheatingNotes: String
+  creatorNotes: String
+  status: RecipeStatus
+  tags: [String]
+  updatedAt: AWSDateTime
+}
+
+input DeleteRecipeInput {
+  id: ID!
+}
+
+input CreateRecipeCommentInput {
+  id: ID
+  recipeId: ID!
+  authorId: ID!
+  authorName: String!
+  authorAvatarUrl: AWSURL
+  body: String!
+  parentCommentId: ID
+  createdAt: AWSDateTime
+}
+
+input DeleteRecipeCommentInput {
+  id: ID!
+}
+
+input CreateRecipeFeedbackInput {
+  id: ID
+  recipeId: ID!
+  authorId: ID!
+  authorName: String!
+  authorAvatarUrl: AWSURL
+  rating: Int!
+  triedIt: Boolean
+  babyReaction: String
+  modifications: String
+  notes: String
+  createdAt: AWSDateTime
+}
+
+input CreateRecipeQuestionInput {
+  id: ID
+  recipeId: ID!
+  authorId: ID!
+  authorName: String!
+  authorAvatarUrl: AWSURL
+  question: String!
+  createdAt: AWSDateTime
+}
+
+input UpdateRecipeQuestionInput {
+  id: ID!
+  isAnsweredByCreator: Boolean
+  creatorAnswer: String
+  answeredAt: AWSDateTime
+}
+
+input CreateSavedRecipeInput {
+  id: ID
+  userId: ID!
+  recipeId: ID!
+  savedAt: AWSDateTime
+}
+
+input DeleteSavedRecipeInput {
+  id: ID!
+}
+
+input CreateRecipeReportInput {
+  id: ID
+  recipeId: ID!
+  commentId: ID
+  questionId: ID
+  reporterId: ID!
+  reason: String!
+  details: String
+  status: ReportStatus
+  createdAt: AWSDateTime
+}
+
+input ModelRecipeFilterInput {
+  status: ModelStringInput
+  cuisine: ModelStringInput
+  ageStage: ModelStringInput
+  creatorId: ModelStringInput
+  title: ModelStringInput
+  description: ModelStringInput
+  and: [ModelRecipeFilterInput]
+  or: [ModelRecipeFilterInput]
+  not: ModelRecipeFilterInput
+}
+
+input ModelStringInput {
+  eq: String
+  ne: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+}
+
+input ModelIntInput {
+  eq: Int
+  ne: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+}
+
+type Query {
+  getUserProfile(id: ID!): UserProfile
+  getRecipe(id: ID!): Recipe
+  listRecipes(filter: ModelRecipeFilterInput, limit: Int, nextToken: String): RecipeConnection
+  recipesByCreatorId(creatorId: ID!, limit: Int, nextToken: String): RecipeConnection
+  commentsByRecipeId(recipeId: ID!, limit: Int, nextToken: String): CommentConnection
+  feedbackByRecipeId(recipeId: ID!, limit: Int, nextToken: String): FeedbackConnection
+  questionsByRecipeId(recipeId: ID!, limit: Int, nextToken: String): QuestionConnection
+  savedRecipesByUserId(userId: ID!, limit: Int, nextToken: String): SavedRecipeConnection
+}
+
+type Mutation {
+  createUserProfile(input: CreateUserProfileInput!): UserProfile
+  updateUserProfile(input: UpdateUserProfileInput!): UserProfile
+  createRecipe(input: CreateRecipeInput!): Recipe
+  updateRecipe(input: UpdateRecipeInput!): Recipe
+  deleteRecipe(input: DeleteRecipeInput!): Recipe
+  createRecipeComment(input: CreateRecipeCommentInput!): RecipeComment
+  deleteRecipeComment(input: DeleteRecipeCommentInput!): RecipeComment
+  createRecipeFeedback(input: CreateRecipeFeedbackInput!): RecipeFeedback
+  createRecipeQuestion(input: CreateRecipeQuestionInput!): RecipeQuestion
+  updateRecipeQuestion(input: UpdateRecipeQuestionInput!): RecipeQuestion
+  createSavedRecipe(input: CreateSavedRecipeInput!): SavedRecipe
+  deleteSavedRecipe(input: DeleteSavedRecipeInput!): SavedRecipe
+  createRecipeReport(input: CreateRecipeReportInput!): RecipeReport
+}
+
+type Subscription {
+  onCreateRecipeComment(recipeId: ID!): RecipeComment
+    @aws_subscribe(mutations: ["createRecipeComment"])
+  onCreateRecipeQuestion(recipeId: ID!): RecipeQuestion
+    @aws_subscribe(mutations: ["createRecipeQuestion"])
+}
