@@ -8,16 +8,21 @@
     "cdk": "cdk",
     "deploy": "cdk deploy --require-approval never",
     "diff": "cdk diff",
-    "synth": "cdk synth"
+    "synth": "cdk synth",
+    "seed:recipes": "tsx scripts/seed-recipes.ts",
+    "unseed:recipes": "tsx scripts/unseed-recipes.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0",
     "aws-cdk-lib": "^2.130.0",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "typescript": "~5.4.5",
-    "aws-cdk": "^2.130.0"
+    "aws-cdk": "^2.130.0",
+    "tsx": "^4.15.0",
+    "typescript": "~5.4.5"
   }
 }
