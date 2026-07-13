@@ -10,7 +10,7 @@ class RecipeQueries {
           allergens prepTimeMinutes cookTimeMinutes servings
           savedCount commentCount feedbackCount questionCount averageRating
           isSponsored isPremium status publishedAt createdAt updatedAt
-          media { items { id url isCover sortOrder } }
+          media { id url isCover sortOrder }
         }
         nextToken
       }
@@ -27,7 +27,7 @@ class RecipeQueries {
         chokingHazardNotes safetyNotes storageReheatingNotes creatorNotes
         tags savedCount commentCount feedbackCount questionCount averageRating
         isSponsored isPremium status moderationNote publishedAt createdAt updatedAt
-        media { items { id url s3Key isCover sortOrder type } }
+        media { id url s3Key isCover sortOrder type }
       }
     }
   ''';
@@ -38,7 +38,7 @@ class RecipeQueries {
         items {
           id title description ageStage texture cuisine status
           savedCount commentCount averageRating createdAt updatedAt
-          media { items { id url isCover sortOrder } }
+          media { id url isCover sortOrder }
         }
         nextToken
       }
