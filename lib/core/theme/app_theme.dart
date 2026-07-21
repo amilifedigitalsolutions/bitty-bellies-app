@@ -133,7 +133,8 @@ class AppTheme {
         chipTheme: ChipThemeData(
           backgroundColor: AppColors.surfaceVariant,
           selectedColor: AppColors.primaryLight,
-          labelStyle: const TextStyle(fontSize: 12, fontFamily: 'Nunito'),
+          labelStyle: const TextStyle(fontSize: 12, fontFamily: 'Nunito', color: AppColors.onBackground),
+          secondaryLabelStyle: const TextStyle(fontSize: 12, fontFamily: 'Nunito', color: AppColors.onBackground),
           side: const BorderSide(color: AppColors.border),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

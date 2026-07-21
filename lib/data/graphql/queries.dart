@@ -109,7 +109,14 @@ class RecipeMutations {
   static const createRecipe = r'''
     mutation CreateRecipe($input: CreateRecipeInput!) {
       createRecipe(input: $input) {
-        id title description creatorId creatorName status createdAt
+        id title description creatorId creatorName creatorAvatarUrl
+        ingredients steps
+        ageStage texture cuisine cultureRegion mealCategories dietTypes
+        allergens prepTimeMinutes cookTimeMinutes servings
+        chokingHazardNotes safetyNotes storageReheatingNotes creatorNotes
+        tags savedCount commentCount feedbackCount questionCount averageRating
+        isSponsored isPremium status moderationNote publishedAt createdAt updatedAt
+        media { id url s3Key isCover sortOrder type }
       }
     }
   ''';

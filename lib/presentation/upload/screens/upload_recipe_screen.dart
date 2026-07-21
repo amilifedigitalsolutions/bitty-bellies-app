@@ -543,25 +543,25 @@ class _IngredientsPage extends StatelessWidget {
                     flex: 2,
                     child: TextFormField(
                       initialValue: ing.quantity,
-                      decoration: const InputDecoration(labelText: 'Qty', hintText: '1'),
+                      decoration: const InputDecoration(labelText: 'Qty', hintText: '1', isDense: true),
                       onChanged: (v) => onUpdate(i, RecipeIngredient(name: ing.name, quantity: v, unit: ing.unit, notes: ing.notes)),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    flex: 2,
+                    flex: 3,
                     child: TextFormField(
                       initialValue: ing.unit,
-                      decoration: const InputDecoration(labelText: 'Unit', hintText: 'tsp'),
+                      decoration: const InputDecoration(labelText: 'Unit', hintText: 'tsp', isDense: true),
                       onChanged: (v) => onUpdate(i, RecipeIngredient(name: ing.name, quantity: ing.quantity, unit: v.isEmpty ? null : v, notes: ing.notes)),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    flex: 5,
+                    flex: 4,
                     child: TextFormField(
                       initialValue: ing.name,
-                      decoration: const InputDecoration(labelText: 'Ingredient', hintText: 'Sweet potato'),
+                      decoration: const InputDecoration(labelText: 'Ingredient', hintText: 'Sweet potato', isDense: true),
                       onChanged: (v) => onUpdate(i, RecipeIngredient(name: v, quantity: ing.quantity, unit: ing.unit, notes: ing.notes)),
                     ),
                   ),
