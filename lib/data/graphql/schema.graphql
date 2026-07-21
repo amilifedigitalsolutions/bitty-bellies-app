@@ -18,7 +18,10 @@ type UserProfile {
   updatedAt: AWSDateTime
 }
 
-type Recipe {
+type Recipe
+  @aws_cognito_user_pools
+  @aws_iam
+{
   id: ID!
   title: String!
   description: String!
@@ -67,7 +70,10 @@ enum RecipeStatus {
   REMOVED
 }
 
-type RecipeMedia {
+type RecipeMedia
+  @aws_cognito_user_pools
+  @aws_iam
+{
   id: ID!
   recipeId: ID!
   s3Key: String!
@@ -164,7 +170,10 @@ type MonetizationPlacement {
   createdAt: AWSDateTime!
 }
 
-type RecipeConnection {
+type RecipeConnection
+  @aws_cognito_user_pools
+  @aws_iam
+{
   items: [Recipe]
   nextToken: String
 }
@@ -380,8 +389,14 @@ input ModelIntInput {
 type Query {
   getUserProfile(id: ID!): UserProfile
   getRecipe(id: ID!): Recipe
+    @aws_cognito_user_pools
+    @aws_iam
   listRecipes(filter: ModelRecipeFilterInput, limit: Int, nextToken: String): RecipeConnection
+    @aws_cognito_user_pools
+    @aws_iam
   recipesByCreatorId(creatorId: ID!, limit: Int, nextToken: String): RecipeConnection
+    @aws_cognito_user_pools
+    @aws_iam
   commentsByRecipeId(recipeId: ID!, limit: Int, nextToken: String): CommentConnection
   feedbackByRecipeId(recipeId: ID!, limit: Int, nextToken: String): FeedbackConnection
   questionsByRecipeId(recipeId: ID!, limit: Int, nextToken: String): QuestionConnection

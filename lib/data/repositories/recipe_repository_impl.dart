@@ -34,6 +34,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
       final request = GraphQLRequest<String>(
         document: RecipeQueries.listRecipes,
         variables: variables,
+        authorizationMode: APIAuthorizationType.iam,
       );
 
       final response = await Amplify.API.query(request: request).response;
@@ -58,6 +59,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
       final request = GraphQLRequest<String>(
         document: RecipeQueries.getRecipe,
         variables: {'id': id},
+        authorizationMode: APIAuthorizationType.iam,
       );
       final response = await Amplify.API.query(request: request).response;
       if (response.errors.isNotEmpty) {
@@ -78,6 +80,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
       final request = GraphQLRequest<String>(
         document: RecipeQueries.recipesByCreator,
         variables: {'creatorId': creatorId, 'limit': 20, if (nextToken != null) 'nextToken': nextToken},
+        authorizationMode: APIAuthorizationType.iam,
       );
       final response = await Amplify.API.query(request: request).response;
       if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
