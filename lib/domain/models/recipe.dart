@@ -1,4 +1,20 @@
+import 'dart:convert';
+
 import 'package:equatable/equatable.dart';
+
+/// AppSync serializes AWSJSON fields as JSON-encoded strings. Seeded data is
+/// double-encoded (the DynamoDB attribute already held a stringified array,
+/// which AWSJSON then re-stringifies), so decode repeatedly until a list
+/// falls out, rather than assuming a single decode.
+List<dynamic>? _decodeJsonListField(dynamic value) {
+  var current = value;
+  for (var i = 0; current is String && i < 3; i++) {
+    current = jsonDecode(current);
+  }
+  if (current == null) return null;
+  if (current is List) return current;
+  throw FormatException('Unexpected type for AWSJSON list field: ${current.runtimeType}');
+}
 
 class RecipeIngredient extends Equatable {
   final String name;
@@ -221,11 +237,11 @@ class Recipe extends Equatable {
         creatorId: json['creatorId'] as String,
         creatorName: json['creatorName'] as String,
         creatorAvatarUrl: json['creatorAvatarUrl'] as String?,
-        ingredients: (json['ingredients'] as List<dynamic>?)
+        ingredients: _decodeJsonListField(json['ingredients'])
                 ?.map((e) => RecipeIngredient.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             [],
-        steps: (json['steps'] as List<dynamic>?)
+        steps: _decodeJsonListField(json['steps'])
                 ?.map((e) => RecipeStep.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             [],
