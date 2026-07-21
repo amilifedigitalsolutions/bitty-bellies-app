@@ -50,21 +50,43 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
     super.dispose();
   }
 
+  bool _savingInFlight = false;
+
   Future<void> _save() async {
     final user = ref.read(currentUserProvider).valueOrNull;
     if (user == null) { context.push('/login'); return; }
+    if (_savingInFlight) return;
+    setState(() => _savingInFlight = true);
+
     final repo = ref.read(recipeRepositoryProvider);
-    final isSaved = await repo.isRecipeSaved(widget.recipe.id);
-    isSaved.when(
+    final isSavedResult = await repo.isRecipeSaved(widget.recipe.id);
+    await isSavedResult.when(
       success: (saved) async {
-        if (saved) {
-          await repo.unsaveRecipe(widget.recipe.id);
-        } else {
-          await repo.saveRecipe(widget.recipe.id);
-        }
-        ref.invalidate(isRecipeSavedProvider(widget.recipe.id));
+        final result = saved
+            ? await repo.unsaveRecipe(widget.recipe.id)
+            : await repo.saveRecipe(widget.recipe.id);
+        result.when(
+          success: (_) {
+            ref.invalidate(isRecipeSavedProvider(widget.recipe.id));
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(saved ? 'Removed from saved recipes' : 'Saved to your recipes')),
+              );
+            }
+          },
+          failure: (e) => _showSaveError(e.message),
+        );
       },
-      failure: (_) {},
+      failure: (e) async => _showSaveError(e.message),
+    );
+
+    if (mounted) setState(() => _savingInFlight = false);
+  }
+
+  void _showSaveError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Could not update saved status: $message')),
     );
   }
 
@@ -98,8 +120,14 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
             ),
             actions: [
               IconButton(
-                icon: Icon(isSaved ? Icons.bookmark : Icons.bookmark_outline),
-                onPressed: _save,
+                icon: _savingInFlight
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Icon(isSaved ? Icons.bookmark : Icons.bookmark_outline),
+                onPressed: _savingInFlight ? null : _save,
                 color: Colors.white,
               ),
               IconButton(icon: const Icon(Icons.share, color: Colors.white), onPressed: _share),
@@ -370,10 +398,21 @@ class _CommentsTabState extends ConsumerState<_CommentsTab> {
     if (user == null) { context.push('/login'); return; }
     setState(() => _sending = true);
     final repo = ref.read(recipeRepositoryProvider);
-    await repo.addComment(widget.recipeId, text);
-    _ctrl.clear();
-    ref.invalidate(recipeCommentsProvider(widget.recipeId));
-    setState(() => _sending = false);
+    final result = await repo.addComment(widget.recipeId, text);
+    result.when(
+      success: (_) {
+        _ctrl.clear();
+        ref.invalidate(recipeCommentsProvider(widget.recipeId));
+      },
+      failure: (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not post comment: ${e.message}')),
+          );
+        }
+      },
+    );
+    if (mounted) setState(() => _sending = false);
   }
 
   @override
@@ -515,10 +554,21 @@ class _QuestionsTabState extends ConsumerState<_QuestionsTab> {
     if (user == null) { context.push('/login'); return; }
     setState(() => _sending = true);
     final repo = ref.read(recipeRepositoryProvider);
-    await repo.addQuestion(widget.recipeId, text);
-    _ctrl.clear();
-    ref.invalidate(recipeQuestionsProvider(widget.recipeId));
-    setState(() => _sending = false);
+    final result = await repo.addQuestion(widget.recipeId, text);
+    result.when(
+      success: (_) {
+        _ctrl.clear();
+        ref.invalidate(recipeQuestionsProvider(widget.recipeId));
+      },
+      failure: (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not post question: ${e.message}')),
+          );
+        }
+      },
+    );
+    if (mounted) setState(() => _sending = false);
   }
 
   @override

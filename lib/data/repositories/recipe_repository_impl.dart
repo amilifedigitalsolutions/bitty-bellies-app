@@ -155,7 +155,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
       final id = _uuid.v4();
       final request = GraphQLRequest<String>(
         document: RecipeMutations.saveRecipe,
-        variables: {'input': {'id': id, 'recipeId': recipeId, 'savedAt': DateTime.now().toIso8601String()}},
+        variables: {'input': {'id': id, 'recipeId': recipeId, 'savedAt': DateTime.now().toUtc().toIso8601String()}},
       );
       final response = await Amplify.API.mutate(request: request).response;
       if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
@@ -249,7 +249,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
             'authorName': user.username,
             'body': body,
             if (parentCommentId != null) 'parentCommentId': parentCommentId,
-            'createdAt': DateTime.now().toIso8601String(),
+            'createdAt': DateTime.now().toUtc().toIso8601String(),
           }
         },
       );
@@ -353,7 +353,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
             'authorId': user.userId,
             'authorName': user.username,
             'question': question,
-            'createdAt': DateTime.now().toIso8601String(),
+            'createdAt': DateTime.now().toUtc().toIso8601String(),
           }
         },
       );
@@ -376,7 +376,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
             'id': questionId,
             'isAnsweredByCreator': true,
             'creatorAnswer': answer,
-            'answeredAt': DateTime.now().toIso8601String(),
+            'answeredAt': DateTime.now().toUtc().toIso8601String(),
           }
         },
       );
@@ -429,7 +429,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
             'reason': reason,
             if (details != null) 'details': details,
             'status': 'PENDING',
-            'createdAt': DateTime.now().toIso8601String(),
+            'createdAt': DateTime.now().toUtc().toIso8601String(),
           }
         },
       );
@@ -512,7 +512,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
         'tags': recipe.tags,
         'isSponsored': recipe.isSponsored,
         'isPremium': recipe.isPremium,
-        'createdAt': recipe.createdAt.toIso8601String(),
+        'createdAt': recipe.createdAt.toUtc().toIso8601String(),
       };
 }
 
