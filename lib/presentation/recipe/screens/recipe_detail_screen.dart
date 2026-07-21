@@ -106,11 +106,9 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
               IconButton(icon: const Icon(Icons.flag_outlined, color: Colors.white), onPressed: _report),
             ],
           ),
-        ],
-        body: Column(
-          children: [
+          SliverToBoxAdapter(
             // Recipe header info
-            Padding(
+            child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,33 +204,53 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
                 ],
               ),
             ),
+          ),
 
-            // Tab bar: Ingredients/Steps | Comments | Questions
-            TabBar(
-              controller: _tabs,
-              tabs: const [
-                Tab(text: 'Recipe'),
-                Tab(text: 'Comments'),
-                Tab(text: 'Questions'),
-              ],
-            ),
-
-            // Tab views
-            Expanded(
-              child: TabBarView(
+          // Tab bar: Recipe | Comments | Questions — pinned so it stays
+          // visible while the tab content below scrolls.
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _TabBarDelegate(
+              TabBar(
                 controller: _tabs,
-                children: [
-                  _RecipeTab(recipe: recipe),
-                  _CommentsTab(recipeId: recipe.id),
-                  _QuestionsTab(recipeId: recipe.id, creatorId: recipe.creatorId),
+                tabs: const [
+                  Tab(text: 'Recipe'),
+                  Tab(text: 'Comments'),
+                  Tab(text: 'Questions'),
                 ],
               ),
             ),
+          ),
+        ],
+        body: TabBarView(
+          controller: _tabs,
+          children: [
+            _RecipeTab(recipe: recipe),
+            _CommentsTab(recipeId: recipe.id),
+            _QuestionsTab(recipeId: recipe.id, creatorId: recipe.creatorId),
           ],
         ),
       ),
     );
   }
+}
+
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+  const _TabBarDelegate(this.tabBar);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return ColoredBox(color: AppColors.background, child: tabBar);
+  }
+
+  @override
+  bool shouldRebuild(_TabBarDelegate oldDelegate) => tabBar != oldDelegate.tabBar;
 }
 
 // ── Tab: Ingredients + Steps ─────────────────────────────────────────────────
