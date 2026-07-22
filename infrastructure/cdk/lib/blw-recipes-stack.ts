@@ -554,7 +554,15 @@ export class BlwRecipesStack extends cdk.Stack {
     recipesDS.createResolver('DeleteRecipe', {
       typeName: 'Mutation',
       fieldName: 'deleteRecipe',
-      requestMappingTemplate: appsync.MappingTemplate.dynamoDbDeleteItem('id', 'id'),
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+{
+  "version": "2017-02-28",
+  "operation": "DeleteItem",
+  "key": {
+    "id": $util.dynamodb.toDynamoDBJson($context.args.input.id)
+  }
+}
+`),
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
     });
 
@@ -582,7 +590,15 @@ export class BlwRecipesStack extends cdk.Stack {
     commentsDS.createResolver('DeleteRecipeComment', {
       typeName: 'Mutation',
       fieldName: 'deleteRecipeComment',
-      requestMappingTemplate: appsync.MappingTemplate.dynamoDbDeleteItem('id', 'id'),
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+{
+  "version": "2017-02-28",
+  "operation": "DeleteItem",
+  "key": {
+    "id": $util.dynamodb.toDynamoDBJson($context.args.input.id)
+  }
+}
+`),
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
     });
 
@@ -669,7 +685,15 @@ export class BlwRecipesStack extends cdk.Stack {
     savedDS.createResolver('DeleteSavedRecipe', {
       typeName: 'Mutation',
       fieldName: 'deleteSavedRecipe',
-      requestMappingTemplate: appsync.MappingTemplate.dynamoDbDeleteItem('id', 'id'),
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+{
+  "version": "2017-02-28",
+  "operation": "DeleteItem",
+  "key": {
+    "id": $util.dynamodb.toDynamoDBJson($context.args.input.id)
+  }
+}
+`),
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
     });
 
