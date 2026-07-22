@@ -4,6 +4,7 @@ import '../../../data/repositories/recipe_repository_impl.dart';
 import '../../../domain/models/recipe.dart';
 import '../../../domain/models/recipe_filter.dart';
 import '../../../domain/repositories/recipe_repository.dart';
+import '../../auth/providers/auth_provider.dart';
 
 final recipeRepositoryProvider = Provider<RecipeRepository>((ref) => RecipeRepositoryImpl());
 
@@ -22,6 +23,18 @@ final recipeListProvider = FutureProvider.autoDispose<List<Recipe>>((ref) async 
 final recipeDetailProvider = FutureProvider.autoDispose.family<Recipe, String>((ref, id) async {
   final repo = ref.read(recipeRepositoryProvider);
   final result = await repo.getRecipeById(id);
+  return result.when(success: (r) => r, failure: (e) => throw e);
+});
+
+// The signed-in user's own recipes, across all statuses (including
+// PENDING_REVIEW/DRAFT) — unlike recipeListProvider, which only shows
+// PUBLISHED recipes to everyone. A recipe not yet approved should still
+// be visible to its own creator under "My Recipes".
+final myRecipesProvider = FutureProvider.autoDispose<List<Recipe>>((ref) async {
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  if (user == null) return [];
+  final repo = ref.read(recipeRepositoryProvider);
+  final result = await repo.getRecipesByCreator(user.id);
   return result.when(success: (r) => r, failure: (e) => throw e);
 });
 

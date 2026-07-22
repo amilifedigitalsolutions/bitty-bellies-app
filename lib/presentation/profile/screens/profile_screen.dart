@@ -85,7 +85,7 @@ class _AuthenticatedProfileState extends ConsumerState<_AuthenticatedProfile>
   @override
   Widget build(BuildContext context) {
     final user = widget.user;
-    final myRecipesAsync = ref.watch(recipeListProvider); // TODO: filter by creatorId
+    final myRecipesAsync = ref.watch(myRecipesProvider);
 
     return Scaffold(
       body: NestedScrollView(

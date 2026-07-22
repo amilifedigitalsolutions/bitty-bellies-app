@@ -541,27 +541,30 @@ class _IngredientsPage extends StatelessWidget {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: TextFormField(
+                    child: _IngredientField(
+                      title: 'Qty',
                       initialValue: ing.quantity,
-                      decoration: const InputDecoration(labelText: 'Qty', hintText: '1', isDense: true),
+                      hintText: '1',
                       onChanged: (v) => onUpdate(i, RecipeIngredient(name: ing.name, quantity: v, unit: ing.unit, notes: ing.notes)),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     flex: 3,
-                    child: TextFormField(
+                    child: _IngredientField(
+                      title: 'Unit',
                       initialValue: ing.unit,
-                      decoration: const InputDecoration(labelText: 'Unit', hintText: 'tsp', isDense: true),
+                      hintText: 'tsp',
                       onChanged: (v) => onUpdate(i, RecipeIngredient(name: ing.name, quantity: ing.quantity, unit: v.isEmpty ? null : v, notes: ing.notes)),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     flex: 4,
-                    child: TextFormField(
+                    child: _IngredientField(
+                      title: 'Ingredient',
                       initialValue: ing.name,
-                      decoration: const InputDecoration(labelText: 'Ingredient', hintText: 'Sweet potato', isDense: true),
+                      hintText: 'Potato',
                       onChanged: (v) => onUpdate(i, RecipeIngredient(name: v, quantity: ing.quantity, unit: ing.unit, notes: ing.notes)),
                     ),
                   ),
@@ -581,6 +584,39 @@ class _IngredientsPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// A field with its title fixed above the box, so the title never competes
+/// with typed content or the hint for width — unlike a floating labelText,
+/// which shares the box with the value and can get squeezed out.
+class _IngredientField extends StatelessWidget {
+  final String title;
+  final String? initialValue;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+
+  const _IngredientField({
+    required this.title,
+    required this.initialValue,
+    required this.hintText,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 4),
+        TextFormField(
+          initialValue: initialValue,
+          decoration: InputDecoration(hintText: hintText, isDense: true),
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 }
