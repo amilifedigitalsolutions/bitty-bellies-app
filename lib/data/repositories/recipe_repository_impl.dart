@@ -152,14 +152,22 @@ class RecipeRepositoryImpl implements RecipeRepository {
   @override
   Future<Result<SavedRecipe>> saveRecipe(String recipeId) async {
     try {
+      final user = await Amplify.Auth.getCurrentUser();
       final id = _uuid.v4();
       final request = GraphQLRequest<String>(
         document: RecipeMutations.saveRecipe,
-        variables: {'input': {'id': id, 'recipeId': recipeId, 'savedAt': DateTime.now().toUtc().toIso8601String()}},
+        variables: {
+          'input': {
+            'id': id,
+            'userId': user.userId,
+            'recipeId': recipeId,
+            'savedAt': DateTime.now().toUtc().toIso8601String(),
+          }
+        },
       );
       final response = await Amplify.API.mutate(request: request).response;
       if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
-      return Success(SavedRecipe(id: id, userId: '', recipeId: recipeId, savedAt: DateTime.now()));
+      return Success(SavedRecipe(id: id, userId: user.userId, recipeId: recipeId, savedAt: DateTime.now()));
     } catch (e) {
       return Failure(UnknownError(e.toString()));
     }
@@ -168,9 +176,23 @@ class RecipeRepositoryImpl implements RecipeRepository {
   @override
   Future<Result<void>> unsaveRecipe(String recipeId) async {
     try {
+      // The saved-recipe record's own id (not the recipe's id) is the
+      // DynamoDB partition key, so it must be looked up before deleting.
+      final savedResult = await getSavedRecipes();
+      final savedId = savedResult.when(
+        success: (saved) {
+          for (final s in saved) {
+            if (s.recipeId == recipeId) return s.id;
+          }
+          return null;
+        },
+        failure: (_) => null,
+      );
+      if (savedId == null) return const Success(null); // already not saved
+
       final request = GraphQLRequest<String>(
         document: RecipeMutations.unsaveRecipe,
-        variables: {'input': {'id': recipeId}},
+        variables: {'input': {'id': savedId}},
       );
       final response = await Amplify.API.mutate(request: request).response;
       if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
