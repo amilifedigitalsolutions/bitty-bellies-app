@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_flutter/amplify_flutter.dart' hide UserProfile;
 
@@ -5,6 +7,7 @@ import '../../core/errors/app_error.dart';
 import '../../core/utils/result.dart';
 import '../../domain/models/user_profile.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../graphql/queries.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   @override
@@ -51,7 +54,8 @@ class AuthRepositoryImpl implements AuthRepository {
       final result = await Amplify.Auth.signIn(username: email, password: password);
       if (result.isSignedIn) {
         final user = await Amplify.Auth.getCurrentUser();
-        return Success(_mockProfile(email, user.username));
+        final name = await _fetchDisplayName() ?? user.username;
+        return Success(await _ensureUserProfile(id: user.userId, email: email, displayName: name));
       }
       return const Failure(AuthError('Sign-in failed. Please try again.'));
     } on UserNotFoundException {
@@ -151,7 +155,7 @@ class AuthRepositoryImpl implements AuthRepository {
         (a) => a.userAttributeKey == CognitoUserAttributeKey.name,
         orElse: () => const AuthUserAttribute(userAttributeKey: CognitoUserAttributeKey.name, value: 'User'),
       ).value;
-      return Success(_mockProfile(email, name, id: user.userId));
+      return Success(await _ensureUserProfile(id: user.userId, email: email, displayName: name));
     } on SignedOutException {
       return const Success(null);
     } catch (_) {
@@ -186,6 +190,63 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (_) {
       return false;
     }
+  }
+
+  Future<String?> _fetchDisplayName() async {
+    try {
+      final attrs = await Amplify.Auth.fetchUserAttributes();
+      final name = attrs.firstWhere(
+        (a) => a.userAttributeKey == CognitoUserAttributeKey.name,
+        orElse: () => const AuthUserAttribute(userAttributeKey: CognitoUserAttributeKey.name, value: ''),
+      ).value;
+      return name.isEmpty ? null : name;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Reads the backend UserProfile record for [id], creating it on the
+  /// first sign-in if it doesn't exist yet. Falls back to a local-only
+  /// profile if the backend call fails, so auth still works offline or if
+  /// AppSync is unreachable — the record just won't be persisted that time.
+  Future<UserProfile> _ensureUserProfile({
+    required String id,
+    required String email,
+    required String displayName,
+  }) async {
+    try {
+      final getRequest = GraphQLRequest<String>(
+        document: RecipeQueries.getUserProfile,
+        variables: {'id': id},
+      );
+      final getResponse = await Amplify.API.query(request: getRequest).response;
+      if (getResponse.errors.isEmpty) {
+        final data = jsonDecode(getResponse.data ?? '{}') as Map<String, dynamic>;
+        final existing = data['getUserProfile'] as Map<String, dynamic>?;
+        if (existing != null) return UserProfile.fromJson(existing);
+      }
+
+      final createRequest = GraphQLRequest<String>(
+        document: RecipeMutations.createUserProfile,
+        variables: {
+          'input': {
+            'id': id,
+            'displayName': displayName,
+            'email': email,
+            'createdAt': DateTime.now().toUtc().toIso8601String(),
+          },
+        },
+      );
+      final createResponse = await Amplify.API.mutate(request: createRequest).response;
+      if (createResponse.errors.isEmpty) {
+        final data = jsonDecode(createResponse.data ?? '{}') as Map<String, dynamic>;
+        final created = data['createUserProfile'] as Map<String, dynamic>?;
+        if (created != null) return UserProfile.fromJson(created);
+      }
+    } catch (_) {
+      // Fall through to the local fallback below.
+    }
+    return _mockProfile(email, displayName, id: id);
   }
 
   UserProfile _mockProfile(String email, String name, {String? id}) => UserProfile(
