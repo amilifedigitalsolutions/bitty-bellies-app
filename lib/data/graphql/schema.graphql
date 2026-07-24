@@ -381,6 +381,8 @@ input ModelRecipeFilterInput {
   descriptionLower: ModelStringInput
   ingredientNamesLower: ModelStringInput
   allergensLower: ModelStringInput
+  mealCategories: ModelStringInput
+  dietTypes: ModelStringInput
   and: [ModelRecipeFilterInput]
   or: [ModelRecipeFilterInput]
   not: ModelRecipeFilterInput

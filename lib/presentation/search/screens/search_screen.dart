@@ -65,7 +65,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
       body: Column(
         children: [
-          if (_showFilters) _FilterPanel(filter: filter),
+          // Flexible (not a bare child) so the filter panel's internal
+          // SingleChildScrollView gets a bounded height to scroll within,
+          // instead of demanding its full unbounded content height and
+          // overflowing the Column once there are enough filter sections
+          // to exceed the screen (RenderFlex overflow).
+          if (_showFilters) Flexible(child: _FilterPanel(filter: filter)),
           Expanded(
             child: recipesAsync.when(
               data: (recipes) {

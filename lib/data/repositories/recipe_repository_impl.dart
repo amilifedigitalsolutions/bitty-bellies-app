@@ -553,6 +553,15 @@ class RecipeRepositoryImpl implements RecipeRepository {
     if (filter.textures.isNotEmpty) {
       conditions.add({'or': filter.textures.map((t) => {'texture': {'eq': t}}).toList()});
     }
+    if (filter.mealCategories.isNotEmpty) {
+      // mealCategories is a native String list; contains() here checks for
+      // an exact element match, which is what selecting "Breakfast" etc.
+      // should mean (unlike the free-text substring fields above).
+      conditions.add({'or': filter.mealCategories.map((m) => {'mealCategories': {'contains': m}}).toList()});
+    }
+    if (filter.dietTypes.isNotEmpty) {
+      conditions.add({'or': filter.dietTypes.map((d) => {'dietTypes': {'contains': d}}).toList()});
+    }
     if (filter.maxPrepTimeMinutes != null) {
       conditions.add({'prepTimeMinutes': {'le': filter.maxPrepTimeMinutes}});
     }
