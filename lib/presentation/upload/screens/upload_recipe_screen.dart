@@ -41,6 +41,7 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
   final List<String> _selectedMealCategories = [];
   final List<String> _selectedDietTypes = [];
   final List<String> _selectedAllergens = [];
+  bool _noAllergensConfirmed = false;
 
   // Page 3 — Ingredients
   final List<RecipeIngredient> _ingredients = [
@@ -99,6 +100,30 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
 
   Future<void> _submit({bool draft = false}) async {
     if (!_formKey.currentState!.validate()) return;
+    // Allergens and choking-hazard notes are safety-review fields that
+    // must be consciously addressed before a real submission — but not
+    // for a draft, which is an intentionally incomplete work-in-progress.
+    // Allergens isn't a single text field, so Form validation can't cover
+    // it; choking-hazard notes could use a Form validator, but that would
+    // also block drafts, so both are checked manually here instead.
+    if (!draft) {
+      if (_selectedAllergens.isEmpty && !_noAllergensConfirmed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Select any allergens present, or confirm "None of these" applies.')),
+        );
+        setState(() => _currentPage = 1);
+        _pageCtrl.jumpToPage(1);
+        return;
+      }
+      if (_chokingCtrl.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Describe any choking hazards, or write "None".')),
+        );
+        setState(() => _currentPage = 4);
+        _pageCtrl.jumpToPage(4);
+        return;
+      }
+    }
     final user = ref.read(currentUserProvider).valueOrNull;
     if (user == null) return;
 
@@ -209,6 +234,7 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
                     selectedMealCategories: _selectedMealCategories,
                     selectedDietTypes: _selectedDietTypes,
                     selectedAllergens: _selectedAllergens,
+                    noAllergensConfirmed: _noAllergensConfirmed,
                     onAgeStageChanged: (v) => setState(() => _selectedAgeStage = v),
                     onTextureChanged: (v) => setState(() => _selectedTexture = v),
                     onCuisineChanged: (v) => setState(() => _selectedCuisine = v),
@@ -219,7 +245,16 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
                       if (sel) _selectedDietTypes.add(v); else _selectedDietTypes.remove(v);
                     }),
                     onAllergenToggle: (v, sel) => setState(() {
-                      if (sel) _selectedAllergens.add(v); else _selectedAllergens.remove(v);
+                      if (sel) {
+                        _selectedAllergens.add(v);
+                        _noAllergensConfirmed = false;
+                      } else {
+                        _selectedAllergens.remove(v);
+                      }
+                    }),
+                    onNoAllergensToggle: (v) => setState(() {
+                      _noAllergensConfirmed = v;
+                      if (v) _selectedAllergens.clear();
                     }),
                   ),
                   _IngredientsPage(
@@ -384,8 +419,10 @@ class _ClassificationPage extends StatelessWidget {
   final String selectedAgeStage, selectedTexture, selectedCuisine;
   final TextEditingController cultureCtrl;
   final List<String> selectedMealCategories, selectedDietTypes, selectedAllergens;
+  final bool noAllergensConfirmed;
   final void Function(String) onAgeStageChanged, onTextureChanged, onCuisineChanged;
   final void Function(String, bool) onMealCategoryToggle, onDietToggle, onAllergenToggle;
+  final void Function(bool) onNoAllergensToggle;
 
   const _ClassificationPage({
     required this.selectedAgeStage,
@@ -395,12 +432,14 @@ class _ClassificationPage extends StatelessWidget {
     required this.selectedMealCategories,
     required this.selectedDietTypes,
     required this.selectedAllergens,
+    required this.noAllergensConfirmed,
     required this.onAgeStageChanged,
     required this.onTextureChanged,
     required this.onCuisineChanged,
     required this.onMealCategoryToggle,
     required this.onDietToggle,
     required this.onAllergenToggle,
+    required this.onNoAllergensToggle,
   });
 
   @override
@@ -467,7 +506,7 @@ class _ClassificationPage extends StatelessWidget {
               Text('Allergens in this recipe', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(width: 8),
               const Tooltip(
-                message: 'Check ALL allergens present in your recipe so parents can make safe choices.',
+                message: 'Check ALL allergens present in your recipe so parents can make safe choices. Required before submitting.',
                 child: Icon(Icons.info_outline, size: 16, color: AppColors.textSecondary),
               ),
             ],
@@ -476,15 +515,22 @@ class _ClassificationPage extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 4,
-            children: AppConstants.allergens.map((a) {
-              final sel = selectedAllergens.contains(a);
-              return FilterChip(
-                label: Text(a),
-                selected: sel,
-                selectedColor: AppColors.allergenTag,
-                onSelected: (v) => onAllergenToggle(a, v),
-              );
-            }).toList(),
+            children: [
+              FilterChip(
+                label: const Text('None of these'),
+                selected: noAllergensConfirmed,
+                onSelected: onNoAllergensToggle,
+              ),
+              ...AppConstants.allergens.map((a) {
+                final sel = selectedAllergens.contains(a);
+                return FilterChip(
+                  label: Text(a),
+                  selected: sel,
+                  selectedColor: AppColors.allergenTag,
+                  onSelected: (v) => onAllergenToggle(a, v),
+                );
+              }),
+            ],
           ),
         ],
       ),
@@ -728,8 +774,8 @@ class _SafetyPage extends StatelessWidget {
 
           AppTextField(
             controller: chokingCtrl,
-            label: 'Choking hazard notes (optional)',
-            hint: 'e.g. Cut grapes into quarters. Ensure carrots are well cooked.',
+            label: 'Choking hazard notes',
+            hint: 'e.g. Cut grapes into quarters. Ensure carrots are well cooked. Write "None" if not applicable.',
             maxLines: 2,
           ),
           const SizedBox(height: 16),
