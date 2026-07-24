@@ -216,7 +216,24 @@ class RecipeRepositoryImpl implements RecipeRepository {
       final items = (data['savedRecipesByUserId']?['items'] as List? ?? [])
           .map((e) => SavedRecipe.fromJson(e as Map<String, dynamic>))
           .toList();
-      return Success(items);
+
+      // The GraphQL schema has no SavedRecipe.recipe field/resolver, so
+      // savedRecipesByUserId only ever returns the bare join record. Hydrate
+      // each one with its actual Recipe so callers (e.g. the Saved Recipes
+      // screen) have something to render. A saved recipe that's since been
+      // deleted just comes back with recipe: null and is filtered out by
+      // callers, rather than failing the whole list.
+      final hydrated = await Future.wait(items.map((s) async {
+        final recipeResult = await getRecipeById(s.recipeId);
+        return SavedRecipe(
+          id: s.id,
+          userId: s.userId,
+          recipeId: s.recipeId,
+          recipe: recipeResult.when(success: (r) => r, failure: (_) => null),
+          savedAt: s.savedAt,
+        );
+      }));
+      return Success(hydrated);
     } catch (e) {
       return Failure(UnknownError(e.toString()));
     }
