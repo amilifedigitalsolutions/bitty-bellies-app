@@ -556,6 +556,15 @@ class RecipeRepositoryImpl implements RecipeRepository {
     if (filter.maxPrepTimeMinutes != null) {
       conditions.add({'prepTimeMinutes': {'le': filter.maxPrepTimeMinutes}});
     }
+    if (filter.excludeAllergens.isNotEmpty) {
+      // A recipe must not contain ANY of the excluded allergens, so this is
+      // an AND of notContains — one per excluded allergen — not an OR.
+      // Substring match (via the lowercased shadow field) so excluding
+      // "peanut" also excludes an item listing "peanut butter".
+      for (final allergen in filter.excludeAllergens) {
+        conditions.add({'allergensLower': {'notContains': allergen.toLowerCase()}});
+      }
+    }
 
     return conditions.length == 1 ? conditions.first : {'and': conditions};
   }
@@ -567,6 +576,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
         'titleLower': recipe.title.toLowerCase(),
         'descriptionLower': recipe.description.toLowerCase(),
         'ingredientNamesLower': recipe.ingredients.map((i) => i.name.toLowerCase()).join(', '),
+        'allergensLower': recipe.allergens.map((a) => a.toLowerCase()).join(', '),
         'creatorId': recipe.creatorId,
         'creatorName': recipe.creatorName,
         'ingredients': jsonEncode(recipe.ingredients.map((i) => i.toJson()).toList()),

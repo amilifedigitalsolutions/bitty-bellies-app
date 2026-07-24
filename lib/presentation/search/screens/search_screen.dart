@@ -168,6 +168,15 @@ class _FilterPanel extends ConsumerWidget {
                 update(filter.copyWith(textures: l));
               },
             ),
+            _FilterSection(
+              title: 'Exclude allergens',
+              options: AppConstants.allergens,
+              selected: filter.excludeAllergens,
+              onToggle: (v, sel) {
+                final l = sel ? [...filter.excludeAllergens, v] : (List.of(filter.excludeAllergens)..remove(v));
+                update(filter.copyWith(excludeAllergens: l));
+              },
+            ),
             if (filter.hasActiveFilters)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
