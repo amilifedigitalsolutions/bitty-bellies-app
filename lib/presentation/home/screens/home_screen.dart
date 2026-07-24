@@ -18,6 +18,7 @@ class HomeScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider).valueOrNull;
     final recipesAsync = ref.watch(recipeListProvider);
     final filter = ref.watch(recipeFilterProvider);
+    final cuisines = ref.watch(availableCuisinesProvider).valueOrNull ?? const [];
 
     return Scaffold(
       body: CustomScrollView(
@@ -59,7 +60,7 @@ class HomeScreen extends ConsumerWidget {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: AppConstants.cuisines.length + 1,
+                itemCount: cuisines.length + 1,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (context, i) {
                   if (i == 0) {
@@ -72,7 +73,7 @@ class HomeScreen extends ConsumerWidget {
                           .update((f) => f.copyWith(cuisines: [])),
                     );
                   }
-                  final cuisine = AppConstants.cuisines[i - 1];
+                  final cuisine = cuisines[i - 1];
                   final selected = filter.cuisines.contains(cuisine);
                   return FilterChip(
                     label: Text(cuisine),

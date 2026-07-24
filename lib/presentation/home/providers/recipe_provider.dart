@@ -19,6 +19,14 @@ final recipeListProvider = FutureProvider.autoDispose<List<Recipe>>((ref) async 
   return result.when(success: (r) => r, failure: (e) => throw e);
 });
 
+// Cuisines actually present in published recipes — drives the Home screen's
+// filter pills so a pill is never shown with zero matching recipes.
+final availableCuisinesProvider = FutureProvider.autoDispose<List<String>>((ref) async {
+  final repo = ref.read(recipeRepositoryProvider);
+  final result = await repo.getAvailableCuisines();
+  return result.when(success: (c) => c, failure: (_) => []);
+});
+
 // Single recipe detail
 final recipeDetailProvider = FutureProvider.autoDispose.family<Recipe, String>((ref, id) async {
   final repo = ref.read(recipeRepositoryProvider);

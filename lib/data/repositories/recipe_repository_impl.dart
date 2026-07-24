@@ -54,6 +54,36 @@ class RecipeRepositoryImpl implements RecipeRepository {
   }
 
   @override
+  Future<Result<List<String>>> getAvailableCuisines() async {
+    // Derives the filter pill list from actual published recipes instead of
+    // a static list, so pills never show a culture with zero results. Scans
+    // a single page of up to 200 recipes — fine at MVP volume, but will need
+    // a proper distinct-value index (e.g. a GSI or maintained lookup table)
+    // once recipe count grows past that, same caveat as the ingredient and
+    // description search filters.
+    try {
+      final request = GraphQLRequest<String>(
+        document: RecipeQueries.listRecipes,
+        variables: {
+          'limit': 200,
+          'filter': {'status': {'eq': 'PUBLISHED'}},
+        },
+        authorizationMode: APIAuthorizationType.iam,
+      );
+      final response = await Amplify.API.query(request: request).response;
+      if (response.errors.isNotEmpty) {
+        return Failure(ServerError(response.errors.first.message));
+      }
+      final data = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
+      final items = (data['listRecipes']?['items'] as List? ?? []);
+      final cuisines = items.map((e) => (e as Map<String, dynamic>)['cuisine'] as String).toSet().toList()..sort();
+      return Success(cuisines);
+    } catch (e) {
+      return Failure(UnknownError(e.toString()));
+    }
+  }
+
+  @override
   Future<Result<Recipe>> getRecipeById(String id) async {
     try {
       final request = GraphQLRequest<String>(

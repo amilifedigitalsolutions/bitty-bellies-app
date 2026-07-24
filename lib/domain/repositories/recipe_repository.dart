@@ -9,6 +9,7 @@ abstract class RecipeRepository {
   Future<Result<List<Recipe>>> getRecipes({RecipeFilter filter = RecipeFilter.empty, String? nextToken});
   Future<Result<Recipe>> getRecipeById(String id);
   Future<Result<List<Recipe>>> getRecipesByCreator(String creatorId, {String? nextToken});
+  Future<Result<List<String>>> getAvailableCuisines();
 
   // Auth-required
   Future<Result<Recipe>> createRecipe(Recipe recipe);

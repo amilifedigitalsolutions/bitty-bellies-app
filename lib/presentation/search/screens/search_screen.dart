@@ -114,6 +114,7 @@ class _FilterPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     void update(RecipeFilter f) => ref.read(recipeFilterProvider.notifier).update((_) => f);
+    final cuisines = ref.watch(availableCuisinesProvider).valueOrNull ?? const [];
 
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -133,7 +134,7 @@ class _FilterPanel extends ConsumerWidget {
             ),
             _FilterSection(
               title: 'Cuisine',
-              options: AppConstants.cuisines,
+              options: cuisines,
               selected: filter.cuisines,
               onToggle: (v, sel) {
                 final l = sel ? [...filter.cuisines, v] : (List.of(filter.cuisines)..remove(v));
