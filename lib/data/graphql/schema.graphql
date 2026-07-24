@@ -232,6 +232,11 @@ input CreateRecipeInput {
   # these instead of title/description directly.
   titleLower: String
   descriptionLower: String
+  # Lowercased, concatenated ingredient names for search — same
+  # case-insensitive-substring approach as titleLower/descriptionLower,
+  # since ingredients itself is an opaque AWSJSON blob DynamoDB can't
+  # filter into.
+  ingredientNamesLower: String
   creatorId: ID!
   creatorName: String!
   creatorAvatarUrl: AWSURL
@@ -264,6 +269,7 @@ input UpdateRecipeInput {
   description: String
   titleLower: String
   descriptionLower: String
+  ingredientNamesLower: String
   ingredients: AWSJSON
   steps: AWSJSON
   prepTimeMinutes: Int
@@ -367,6 +373,7 @@ input ModelRecipeFilterInput {
   description: ModelStringInput
   titleLower: ModelStringInput
   descriptionLower: ModelStringInput
+  ingredientNamesLower: ModelStringInput
   and: [ModelRecipeFilterInput]
   or: [ModelRecipeFilterInput]
   not: ModelRecipeFilterInput

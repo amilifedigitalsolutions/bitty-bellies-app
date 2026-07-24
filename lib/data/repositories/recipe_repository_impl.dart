@@ -510,6 +510,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
         'or': [
           {'titleLower': {'contains': q}},
           {'descriptionLower': {'contains': q}},
+          {'ingredientNamesLower': {'contains': q}},
         ]
       });
     }
@@ -535,6 +536,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
         'description': recipe.description,
         'titleLower': recipe.title.toLowerCase(),
         'descriptionLower': recipe.description.toLowerCase(),
+        'ingredientNamesLower': recipe.ingredients.map((i) => i.name.toLowerCase()).join(', '),
         'creatorId': recipe.creatorId,
         'creatorName': recipe.creatorName,
         'ingredients': jsonEncode(recipe.ingredients.map((i) => i.toJson()).toList()),
