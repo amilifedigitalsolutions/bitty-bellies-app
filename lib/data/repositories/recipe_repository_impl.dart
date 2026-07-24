@@ -502,10 +502,14 @@ class RecipeRepositoryImpl implements RecipeRepository {
     ];
 
     if (filter.query != null && filter.query!.isNotEmpty) {
+      // DynamoDB's contains() filter is case-sensitive, so match against
+      // the lowercased shadow fields with a lowercased query instead of
+      // title/description directly.
+      final q = filter.query!.toLowerCase();
       conditions.add({
         'or': [
-          {'title': {'contains': filter.query}},
-          {'description': {'contains': filter.query}},
+          {'titleLower': {'contains': q}},
+          {'descriptionLower': {'contains': q}},
         ]
       });
     }
@@ -529,6 +533,8 @@ class RecipeRepositoryImpl implements RecipeRepository {
         'id': recipe.id,
         'title': recipe.title,
         'description': recipe.description,
+        'titleLower': recipe.title.toLowerCase(),
+        'descriptionLower': recipe.description.toLowerCase(),
         'creatorId': recipe.creatorId,
         'creatorName': recipe.creatorName,
         'ingredients': jsonEncode(recipe.ingredients.map((i) => i.toJson()).toList()),

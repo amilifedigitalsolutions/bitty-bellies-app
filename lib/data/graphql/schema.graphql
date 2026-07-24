@@ -227,6 +227,11 @@ input CreateRecipeInput {
   id: ID
   title: String!
   description: String!
+  # Lowercased shadow copies for case-insensitive search — DynamoDB's
+  # native contains() filter is case-sensitive, so search matches against
+  # these instead of title/description directly.
+  titleLower: String
+  descriptionLower: String
   creatorId: ID!
   creatorName: String!
   creatorAvatarUrl: AWSURL
@@ -257,6 +262,8 @@ input UpdateRecipeInput {
   id: ID!
   title: String
   description: String
+  titleLower: String
+  descriptionLower: String
   ingredients: AWSJSON
   steps: AWSJSON
   prepTimeMinutes: Int
@@ -358,6 +365,8 @@ input ModelRecipeFilterInput {
   creatorId: ModelStringInput
   title: ModelStringInput
   description: ModelStringInput
+  titleLower: ModelStringInput
+  descriptionLower: ModelStringInput
   and: [ModelRecipeFilterInput]
   or: [ModelRecipeFilterInput]
   not: ModelRecipeFilterInput
