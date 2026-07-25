@@ -31,6 +31,10 @@ class AppConstants {
   ];
 
   // Meal categories
+  // No "Any" catch-all: creators can already multi-select every category
+  // that applies, and a recipe tagged only "Any" wouldn't actually surface
+  // under a specific meal-type filter (e.g. "Breakfast") since the filter
+  // matches exact tag values — so "Any" was both redundant and broken.
   static const List<String> mealCategories = [
     'Breakfast',
     'Lunch',
@@ -38,7 +42,6 @@ class AppConstants {
     'Snack',
     'Dessert',
     'Drink',
-    'Any',
   ];
 
   // Diet types
