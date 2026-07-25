@@ -150,11 +150,12 @@ class RecipeRepositoryImpl implements RecipeRepository {
     try {
       final request = GraphQLRequest<String>(
         document: RecipeMutations.updateRecipe,
-        variables: {'input': _recipeToInput(recipe)},
+        variables: {'input': _recipeToInput(recipe, isUpdate: true)},
       );
       final response = await Amplify.API.mutate(request: request).response;
       if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
-      return Success(recipe);
+      final data = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
+      return Success(Recipe.fromJson(data['updateRecipe'] as Map<String, dynamic>));
     } catch (e) {
       return Failure(UnknownError(e.toString()));
     }
@@ -528,7 +529,15 @@ class RecipeRepositoryImpl implements RecipeRepository {
 
   Map<String, dynamic> _buildFilter(RecipeFilter filter) {
     final conditions = <Map<String, dynamic>>[
-      {'status': {'eq': 'PUBLISHED'}},
+      // Pending-review recipes show publicly right away (tagged in the UI)
+      // rather than staying hidden until a moderator publishes them, so the
+      // feed still feels active during review.
+      {
+        'or': [
+          {'status': {'eq': 'PUBLISHED'}},
+          {'status': {'eq': 'PENDING_REVIEW'}},
+        ],
+      },
     ];
 
     if (filter.query != null && filter.query!.isNotEmpty) {
@@ -578,7 +587,12 @@ class RecipeRepositoryImpl implements RecipeRepository {
     return conditions.length == 1 ? conditions.first : {'and': conditions};
   }
 
-  Map<String, dynamic> _recipeToInput(Recipe recipe) => {
+  // UpdateRecipeInput doesn't declare creatorId/creatorName/creatorAvatarUrl,
+  // isSponsored, isPremium, or createdAt (a recipe's creator and creation
+  // time aren't editable, and sponsorship/premium flags are admin-only) —
+  // sending them anyway makes AppSync reject the whole mutation with an
+  // "unknown field" validation error, so they're only included for create.
+  Map<String, dynamic> _recipeToInput(Recipe recipe, {bool isUpdate = false}) => {
         'id': recipe.id,
         'title': recipe.title,
         'description': recipe.description,
@@ -586,8 +600,6 @@ class RecipeRepositoryImpl implements RecipeRepository {
         'descriptionLower': recipe.description.toLowerCase(),
         'ingredientNamesLower': recipe.ingredients.map((i) => i.name.toLowerCase()).join(', '),
         'allergensLower': recipe.allergens.map((a) => a.toLowerCase()).join(', '),
-        'creatorId': recipe.creatorId,
-        'creatorName': recipe.creatorName,
         'ingredients': jsonEncode(recipe.ingredients.map((i) => i.toJson()).toList()),
         'steps': jsonEncode(recipe.steps.map((s) => s.toJson()).toList()),
         'media': recipe.media.map((m) => m.toJson()).toList(),
@@ -607,9 +619,15 @@ class RecipeRepositoryImpl implements RecipeRepository {
         'creatorNotes': recipe.creatorNotes,
         'status': recipe.status,
         'tags': recipe.tags,
-        'isSponsored': recipe.isSponsored,
-        'isPremium': recipe.isPremium,
-        'createdAt': recipe.createdAt.toUtc().toIso8601String(),
+        if (isUpdate)
+          'updatedAt': DateTime.now().toUtc().toIso8601String()
+        else ...{
+          'creatorId': recipe.creatorId,
+          'creatorName': recipe.creatorName,
+          'isSponsored': recipe.isSponsored,
+          'isPremium': recipe.isPremium,
+          'createdAt': recipe.createdAt.toUtc().toIso8601String(),
+        },
       };
 }
 

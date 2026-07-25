@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/models/recipe.dart';
 import '../../presentation/auth/providers/auth_provider.dart';
 import '../../presentation/auth/screens/login_screen.dart';
 import '../../presentation/auth/screens/register_screen.dart';
@@ -84,7 +85,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (user == null) return '/login?redirect=/upload';
           return null;
         },
-        builder: (_, __) => const UploadRecipeScreen(),
+        builder: (_, state) => UploadRecipeScreen(existingRecipe: state.extra as Recipe?),
       ),
 
       // Saved recipes — auth guarded

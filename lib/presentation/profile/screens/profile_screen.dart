@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../domain/models/recipe.dart';
 import '../../../domain/models/user_profile.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../home/providers/recipe_provider.dart';
@@ -170,7 +171,12 @@ class _AuthenticatedProfileState extends ConsumerState<_AuthenticatedProfile>
                       itemCount: recipes.length,
                       itemBuilder: (_, i) => Padding(
                         padding: const EdgeInsets.only(bottom: 16),
-                        child: RecipeCard(recipe: recipes[i], onTap: () => context.push('/recipe/${recipes[i].id}')),
+                        child: Stack(
+                          children: [
+                            RecipeCard(recipe: recipes[i], onTap: () => context.push('/recipe/${recipes[i].id}')),
+                            Positioned(top: 8, right: 8, child: _OwnerActions(recipe: recipes[i])),
+                          ],
+                        ),
                       ),
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -295,6 +301,82 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// Edit/delete affordances shown only on the owner's own My Recipes cards —
+// available regardless of status (draft/pending/published) per the recipe
+// lifecycle backlog item (2.7a).
+class _OwnerActions extends ConsumerWidget {
+  final Recipe recipe;
+  const _OwnerActions({required this.recipe});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
+        onSelected: (value) {
+          if (value == 'edit') {
+            _openEdit(context, ref);
+          } else if (value == 'delete') {
+            _confirmDelete(context, ref);
+          }
+        },
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'edit', child: Text('Edit')),
+          PopupMenuItem(value: 'delete', child: Text('Delete')),
+        ],
+      ),
+    );
+  }
+
+  // My Recipes uses a thin query (just enough for a RecipeCard) — it's
+  // missing ingredients, steps, prep/cook time, and more, so the edit
+  // screen needs the full recipe fetched fresh rather than the list item.
+  Future<void> _openEdit(BuildContext context, WidgetRef ref) async {
+    final result = await ref.read(recipeRepositoryProvider).getRecipeById(recipe.id);
+    if (!context.mounted) return;
+    result.when(
+      success: (full) => context.push('/upload', extra: full),
+      failure: (e) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not load recipe: ${e.message}'), backgroundColor: AppColors.error),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete recipe?'),
+        content: Text('"${recipe.title}" will be removed permanently.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final result = await ref.read(recipeRepositoryProvider).deleteRecipe(recipe.id);
+    if (!context.mounted) return;
+    result.when(
+      success: (_) {
+        ref.invalidate(myRecipesProvider);
+        ref.invalidate(recipeListProvider);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recipe deleted.')));
+      },
+      failure: (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not delete recipe: ${e.message}'), backgroundColor: AppColors.error),
+        );
+      },
     );
   }
 }

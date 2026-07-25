@@ -14,7 +14,8 @@ import '../../auth/providers/auth_provider.dart';
 import '../../home/providers/recipe_provider.dart';
 
 class UploadRecipeScreen extends ConsumerStatefulWidget {
-  const UploadRecipeScreen({super.key});
+  final Recipe? existingRecipe;
+  const UploadRecipeScreen({super.key, this.existingRecipe});
 
   @override
   ConsumerState<UploadRecipeScreen> createState() => _UploadRecipeScreenState();
@@ -27,40 +28,68 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
   bool _isSaving = false;
 
   // Page 1 — Basics
-  final _titleCtrl = TextEditingController();
-  final _descriptionCtrl = TextEditingController();
-  final _prepCtrl = TextEditingController(text: '10');
-  final _cookCtrl = TextEditingController(text: '15');
-  final _servingsCtrl = TextEditingController(text: '1');
+  late final TextEditingController _titleCtrl;
+  late final TextEditingController _descriptionCtrl;
+  late final TextEditingController _prepCtrl;
+  late final TextEditingController _cookCtrl;
+  late final TextEditingController _servingsCtrl;
   File? _coverImage;
 
   // Page 2 — Classification
-  String _selectedAgeStage = AppConstants.ageStages.first;
-  String _selectedTexture = AppConstants.textures.first;
-  String _selectedCuisine = AppConstants.cuisines.first;
-  final _cultureCtrl = TextEditingController();
-  final List<String> _selectedMealCategories = [];
-  final List<String> _selectedDietTypes = [];
-  final List<String> _selectedAllergens = [];
+  late String _selectedAgeStage;
+  late String _selectedTexture;
+  late String _selectedCuisine;
+  late final TextEditingController _cultureCtrl;
+  late List<String> _selectedMealCategories;
+  late List<String> _selectedDietTypes;
+  late List<String> _selectedAllergens;
   bool _noAllergensConfirmed = false;
 
   // Page 3 — Ingredients
-  final List<RecipeIngredient> _ingredients = [
-    const RecipeIngredient(name: '', quantity: ''),
-  ];
+  late List<RecipeIngredient> _ingredients;
 
   // Page 4 — Steps
-  final List<RecipeStep> _steps = [
-    const RecipeStep(stepNumber: 1, instruction: ''),
-  ];
+  late List<RecipeStep> _steps;
 
   // Page 5 — Safety & Notes
-  final _chokingCtrl = TextEditingController();
-  final _safetyCtrl = TextEditingController();
-  final _storageCtrl = TextEditingController();
-  final _creatorNotesCtrl = TextEditingController();
+  late final TextEditingController _chokingCtrl;
+  late final TextEditingController _safetyCtrl;
+  late final TextEditingController _storageCtrl;
+  late final TextEditingController _creatorNotesCtrl;
 
   static const int _totalPages = 5;
+
+  @override
+  void initState() {
+    super.initState();
+    final r = widget.existingRecipe;
+    _titleCtrl = TextEditingController(text: r?.title ?? '');
+    _descriptionCtrl = TextEditingController(text: r?.description ?? '');
+    _prepCtrl = TextEditingController(text: '${r?.prepTimeMinutes ?? 10}');
+    _cookCtrl = TextEditingController(text: '${r?.cookTimeMinutes ?? 15}');
+    _servingsCtrl = TextEditingController(text: '${r?.servings ?? 1}');
+    _selectedAgeStage = r?.ageStage ?? AppConstants.ageStages.first;
+    _selectedTexture = r?.texture ?? AppConstants.textures.first;
+    _selectedCuisine = r?.cuisine ?? AppConstants.cuisines.first;
+    _cultureCtrl = TextEditingController(text: r?.cultureRegion ?? '');
+    _selectedMealCategories = List.of(r?.mealCategories ?? const []);
+    _selectedDietTypes = List.of(r?.dietTypes ?? const []);
+    _selectedAllergens = List.of(r?.allergens ?? const []);
+    // An existing recipe with an empty allergens list already passed the
+    // required-allergens check at its original submission time, so treat
+    // it as already-confirmed rather than forcing the user to re-toggle it.
+    _noAllergensConfirmed = r != null && r.allergens.isEmpty;
+    _ingredients = r != null && r.ingredients.isNotEmpty
+        ? List.of(r.ingredients)
+        : [const RecipeIngredient(name: '', quantity: '')];
+    _steps = r != null && r.steps.isNotEmpty
+        ? List.of(r.steps)
+        : [const RecipeStep(stepNumber: 1, instruction: '')];
+    _chokingCtrl = TextEditingController(text: r?.chokingHazardNotes ?? '');
+    _safetyCtrl = TextEditingController(text: r?.safetyNotes ?? '');
+    _storageCtrl = TextEditingController(text: r?.storageReheatingNotes ?? '');
+    _creatorNotesCtrl = TextEditingController(text: r?.creatorNotes ?? '');
+  }
 
   @override
   void dispose() {
@@ -203,8 +232,10 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
 
     setState(() => _isSaving = true);
 
-    final recipeId = const Uuid().v4();
-    List<RecipeMedia> media = const [];
+    final recipeId = widget.existingRecipe?.id ?? const Uuid().v4();
+    // Editing without picking a new photo keeps whatever media the recipe
+    // already had — only replace it if the user actually chose a new file.
+    List<RecipeMedia> media = widget.existingRecipe?.media ?? const [];
     if (_coverImage != null) {
       final mediaId = const Uuid().v4();
       final key = 'public/recipes/$recipeId/$mediaId.jpg';
@@ -234,12 +265,20 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
       }
     }
 
+    final existing = widget.existingRecipe;
+    // Editing an already-submitted recipe keeps its current status as-is
+    // (no re-triggering review, no accidental demotion via "Save draft") —
+    // only a recipe that's still a draft respects the draft/submit toggle.
+    final status = existing != null && existing.status != AppConstants.statusDraft
+        ? existing.status
+        : (draft ? AppConstants.statusDraft : AppConstants.statusPending);
+
     final recipe = Recipe(
       id: recipeId,
       title: _titleCtrl.text.trim(),
       description: _descriptionCtrl.text.trim(),
-      creatorId: user.id,
-      creatorName: user.displayName,
+      creatorId: existing?.creatorId ?? user.id,
+      creatorName: existing?.creatorName ?? user.displayName,
       ingredients: _ingredients.where((i) => i.name.isNotEmpty).toList(),
       steps: _steps.where((s) => s.instruction.isNotEmpty).toList(),
       media: media,
@@ -257,20 +296,28 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
       safetyNotes: _safetyCtrl.text.trim().isEmpty ? null : _safetyCtrl.text.trim(),
       storageReheatingNotes: _storageCtrl.text.trim().isEmpty ? null : _storageCtrl.text.trim(),
       creatorNotes: _creatorNotesCtrl.text.trim().isEmpty ? null : _creatorNotesCtrl.text.trim(),
-      status: draft ? AppConstants.statusDraft : AppConstants.statusPending,
-      createdAt: DateTime.now(),
+      status: status,
+      createdAt: existing?.createdAt ?? DateTime.now(),
     );
 
-    final result = await ref.read(recipeRepositoryProvider).createRecipe(recipe);
+    final repo = ref.read(recipeRepositoryProvider);
+    final result = existing != null ? await repo.updateRecipe(recipe) : await repo.createRecipe(recipe);
     if (!mounted) return;
 
     result.when(
       success: (r) {
         ref.invalidate(recipeListProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(draft ? 'Recipe saved as draft.' : 'Recipe submitted for review!')),
-        );
-        context.go('/');
+        ref.invalidate(myRecipesProvider);
+        if (existing != null) ref.invalidate(recipeDetailProvider(recipeId));
+        final message = existing != null
+            ? 'Recipe updated.'
+            : (draft ? 'Recipe saved as draft.' : 'Recipe submitted for review!');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        if (existing != null) {
+          context.pop();
+        } else {
+          context.go('/');
+        }
       },
       failure: (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -286,7 +333,7 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Share a recipe'),
+        title: Text(widget.existingRecipe != null ? 'Edit recipe' : 'Share a recipe'),
         leading: _currentPage == 0
             ? const BackButton()
             : IconButton(icon: const Icon(Icons.arrow_back), onPressed: _prevPage),
@@ -759,6 +806,7 @@ class _UnitField extends StatelessWidget {
         DropdownButtonFormField<String?>(
           initialValue: value != null && AppConstants.units.contains(value) ? value : null,
           decoration: const InputDecoration(hintText: 'tsp', isDense: true),
+          isExpanded: true,
           items: [
             const DropdownMenuItem<String?>(value: null, child: Text('—')),
             ...AppConstants.units.map((u) => DropdownMenuItem<String?>(value: u, child: Text(u))),

@@ -238,6 +238,10 @@ class Recipe extends Equatable {
 
   bool get isPublished => status == 'PUBLISHED';
 
+  // Shown on cards/detail for recipes that are visible in the public feed
+  // ahead of moderator approval — null once a recipe leaves PENDING_REVIEW.
+  String? get pendingLabel => status == 'PENDING_REVIEW' ? 'Pending review' : null;
+
   factory Recipe.fromJson(Map<String, dynamic> json) => Recipe(
         id: json['id'] as String,
         title: json['title'] as String,

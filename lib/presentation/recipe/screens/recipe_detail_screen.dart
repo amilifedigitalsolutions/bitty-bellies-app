@@ -68,6 +68,7 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
         result.when(
           success: (_) {
             ref.invalidate(isRecipeSavedProvider(widget.recipe.id));
+            ref.invalidate(savedRecipesProvider);
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(saved ? 'Removed from saved recipes' : 'Saved to your recipes')),
@@ -150,6 +151,7 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
                       _Tag(recipe.texture, color: AppColors.surfaceVariant),
                       _Tag(recipe.cuisine, color: AppColors.surfaceVariant),
                       ...recipe.mealCategories.map((c) => _Tag(c, color: AppColors.surfaceVariant)),
+                      if (recipe.pendingLabel != null) _Tag(recipe.pendingLabel!, color: AppColors.primaryLight),
                     ],
                   ),
                   const SizedBox(height: 12),

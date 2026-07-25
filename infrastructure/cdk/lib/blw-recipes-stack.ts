@@ -550,7 +550,13 @@ export class BlwRecipesStack extends cdk.Stack {
     "id": $util.dynamodb.toDynamoDBJson($context.args.input.id)
   },
   #set($input = $util.map.copyAndRemoveAllKeys($context.args.input, ["id"]))
-  "update": $util.dynamodb.toMapValuesJson($input)
+  "update": $util.dynamodb.toMapValuesJson($input),
+  "condition": {
+    "expression": "creatorId = :creatorId",
+    "expressionValues": {
+      ":creatorId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub)
+    }
+  }
 }
 `),
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
@@ -565,6 +571,12 @@ export class BlwRecipesStack extends cdk.Stack {
   "operation": "DeleteItem",
   "key": {
     "id": $util.dynamodb.toDynamoDBJson($context.args.input.id)
+  },
+  "condition": {
+    "expression": "creatorId = :creatorId",
+    "expressionValues": {
+      ":creatorId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub)
+    }
   }
 }
 `),

@@ -124,7 +124,14 @@ class RecipeMutations {
   static const updateRecipe = r'''
     mutation UpdateRecipe($input: UpdateRecipeInput!) {
       updateRecipe(input: $input) {
-        id title description status updatedAt
+        id title description creatorId creatorName creatorAvatarUrl
+        ingredients steps
+        ageStage texture cuisine cultureRegion mealCategories dietTypes
+        allergens prepTimeMinutes cookTimeMinutes servings
+        chokingHazardNotes safetyNotes storageReheatingNotes creatorNotes
+        tags savedCount commentCount feedbackCount questionCount averageRating
+        isSponsored isPremium status moderationNote publishedAt createdAt updatedAt
+        media { id recipeId url s3Key isCover sortOrder type uploadedBy createdAt }
       }
     }
   ''';
