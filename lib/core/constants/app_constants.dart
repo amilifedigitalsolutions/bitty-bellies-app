@@ -2,7 +2,7 @@ class AppConstants {
   AppConstants._();
 
   static const String appName = 'Bitty Bellies';
-  static const String appTagline = 'Baby-led weaning, made global.';
+  static const String appTagline = 'Real recipes from real parents, from around the world.';
 
   // Pagination
   static const int pageSize = 20;
@@ -114,7 +114,7 @@ class AppConstants {
   // Safety disclaimer
   static const String safetyDisclaimer =
       'Always supervise your baby during meal times. '
-      'Recipes on this app are shared by community members and are not medical advice. '
+      'Recipes on this app are shared by other parents and are not medical advice. '
       'Consult your pediatrician or health visitor before introducing new foods. '
       'Follow your local pediatric feeding guidance.';
 

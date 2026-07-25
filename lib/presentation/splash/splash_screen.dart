@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 
 // The router redirect (RouterNotifier) handles splash → home transition as soon
@@ -28,7 +29,7 @@ class SplashScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             const Text(
-              'Bitty Bellies',
+              AppConstants.appName,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 32,
@@ -38,7 +39,7 @@ class SplashScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Baby-led weaning, made global.',
+              AppConstants.appTagline,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.85),
                 fontSize: 16,

@@ -1,12 +1,12 @@
-# BLW Recipes
+# Bitty Bellies
 
-> A global, community-driven baby-led weaning recipe app for mothers and caregivers worldwide.
+> A recipe app where parents share what's worked for their families, from around the world.
 
 ---
 
 ## Overview
 
-BLW Recipes is a cross-platform mobile app (Flutter) backed by AWS that lets parents discover, save, share, and upload baby-led weaning recipes from cultures around the world. Guest users can browse freely; accounts unlock saving, uploading, commenting, and sharing.
+Bitty Bellies is a cross-platform mobile app (Flutter) backed by AWS that lets parents discover, save, share, and upload recipes from cultures around the world. Guest users can browse freely; accounts unlock saving, uploading, commenting, and sharing.
 
 ---
 

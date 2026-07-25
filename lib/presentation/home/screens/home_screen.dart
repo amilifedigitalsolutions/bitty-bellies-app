@@ -113,7 +113,7 @@ class HomeScreen extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Always supervise feeding. Recipes are community-shared and not medical advice.',
+                      'Always supervise feeding. These recipes come from parents like you — not medical advice.',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
@@ -129,7 +129,7 @@ class HomeScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  Text('Recipes from around the world', style: Theme.of(context).textTheme.headlineSmall),
+                  Text('Recipes parents like you are sharing', style: Theme.of(context).textTheme.headlineSmall),
                   const Spacer(),
                   if (filter.hasActiveFilters)
                     TextButton(

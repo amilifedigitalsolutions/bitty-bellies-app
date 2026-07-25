@@ -91,7 +91,7 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
   }
 
   Future<void> _share() async {
-    await Share.share('Check out this baby-led weaning recipe: ${widget.recipe.title}');
+    await Share.share('A parent-tested recipe from Bitty Bellies: ${widget.recipe.title}');
   }
 
   Future<void> _report() async {

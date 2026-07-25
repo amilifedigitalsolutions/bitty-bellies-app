@@ -164,7 +164,7 @@ class _AuthenticatedProfileState extends ConsumerState<_AuthenticatedProfile>
             // My recipes
             myRecipesAsync.when(
               data: (recipes) => recipes.isEmpty
-                  ? const EmptyView(message: 'No recipes yet', subMessage: 'Share your first baby-led weaning recipe!', icon: Icons.add_circle_outline)
+                  ? const EmptyView(message: 'No recipes yet', subMessage: 'Share a recipe your family loves!', icon: Icons.add_circle_outline)
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: recipes.length,

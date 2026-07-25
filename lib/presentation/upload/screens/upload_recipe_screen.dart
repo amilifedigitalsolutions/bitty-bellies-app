@@ -506,7 +506,7 @@ class _ClassificationPage extends StatelessWidget {
               Text('Allergens in this recipe', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(width: 8),
               const Tooltip(
-                message: 'Check ALL allergens present in your recipe so parents can make safe choices. Required before submitting.',
+                message: 'Check every allergen in this recipe — it helps other parents keep their kids safe. Required before submitting.',
                 child: Icon(Icons.info_outline, size: 16, color: AppColors.textSecondary),
               ),
             ],
