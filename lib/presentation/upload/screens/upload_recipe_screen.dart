@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -77,12 +78,63 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
   }
 
   void _nextPage() {
+    if (!_validateCurrentPage()) return;
     if (_currentPage < _totalPages - 1) {
       _pageCtrl.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
       setState(() => _currentPage++);
     } else {
       _submit();
     }
+  }
+
+  // Gates "Next" on the current page's required fields, so a page is never
+  // left half-filled — final submission still re-checks everything (see
+  // _submit), but this catches it immediately instead of only at the end.
+  // "Save draft" bypasses this entirely (it doesn't call _nextPage), since a
+  // draft is intentionally allowed to be incomplete.
+  bool _validateCurrentPage() {
+    switch (_currentPage) {
+      case 0:
+        if (_titleCtrl.text.trim().isEmpty) {
+          _showPageError('Recipe title is required.');
+          return false;
+        }
+        if (_descriptionCtrl.text.trim().isEmpty) {
+          _showPageError('Short description is required.');
+          return false;
+        }
+        return true;
+      case 1:
+        if (_selectedAllergens.isEmpty && !_noAllergensConfirmed) {
+          _showPageError('Select any allergens present, or confirm "None of these" applies.');
+          return false;
+        }
+        return true;
+      case 2:
+        if (_ingredients.where((i) => i.name.trim().isNotEmpty).isEmpty) {
+          _showPageError('Add at least one ingredient.');
+          return false;
+        }
+        return true;
+      case 3:
+        if (_steps.where((s) => s.instruction.trim().isNotEmpty).isEmpty) {
+          _showPageError('Add at least one instruction step.');
+          return false;
+        }
+        return true;
+      case 4:
+        if (_chokingCtrl.text.trim().isEmpty) {
+          _showPageError('Describe any choking hazards, or write "None".');
+          return false;
+        }
+        return true;
+      default:
+        return true;
+    }
+  }
+
+  void _showPageError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _prevPage() {
@@ -100,6 +152,28 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
 
   Future<void> _submit({bool draft = false}) async {
     if (!_formKey.currentState!.validate()) return;
+    // Title/description are covered by Form validators above, but ingredients
+    // and steps are lists rather than a single text field, and _submit()
+    // silently drops blank-name/blank-instruction entries before building
+    // the Recipe — so a page left with only the default empty row passes
+    // Form validation yet would submit with zero real content. Checked
+    // manually here, against the same filtered content that gets submitted.
+    if (_ingredients.where((i) => i.name.trim().isNotEmpty).isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add at least one ingredient.')),
+      );
+      setState(() => _currentPage = 2);
+      _pageCtrl.jumpToPage(2);
+      return;
+    }
+    if (_steps.where((s) => s.instruction.trim().isNotEmpty).isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add at least one instruction step.')),
+      );
+      setState(() => _currentPage = 3);
+      _pageCtrl.jumpToPage(3);
+      return;
+    }
     // Allergens and choking-hazard notes are safety-review fields that
     // must be consciously addressed before a real submission — but not
     // for a draft, which is an intentionally incomplete work-in-progress.
@@ -129,14 +203,46 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
 
     setState(() => _isSaving = true);
 
+    final recipeId = const Uuid().v4();
+    List<RecipeMedia> media = const [];
+    if (_coverImage != null) {
+      final mediaId = const Uuid().v4();
+      final key = 'public/recipes/$recipeId/$mediaId.jpg';
+      try {
+        await Amplify.Storage.uploadFile(
+          localFile: AWSFile.fromPath(_coverImage!.path),
+          path: StoragePath.fromString(key),
+        ).result;
+        media = [
+          RecipeMedia(
+            id: mediaId,
+            recipeId: recipeId,
+            s3Key: key,
+            url: 'https://${AppConstants.s3MediaBucket}.s3.${AppConstants.s3MediaRegion}.amazonaws.com/$key',
+            isCover: true,
+            uploadedBy: user.id,
+            createdAt: DateTime.now().toUtc(),
+          ),
+        ];
+      } on StorageException catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Photo upload failed: ${e.message}'), backgroundColor: AppColors.error),
+        );
+        setState(() => _isSaving = false);
+        return;
+      }
+    }
+
     final recipe = Recipe(
-      id: const Uuid().v4(),
+      id: recipeId,
       title: _titleCtrl.text.trim(),
       description: _descriptionCtrl.text.trim(),
       creatorId: user.id,
       creatorName: user.displayName,
       ingredients: _ingredients.where((i) => i.name.isNotEmpty).toList(),
       steps: _steps.where((s) => s.instruction.isNotEmpty).toList(),
+      media: media,
       prepTimeMinutes: int.tryParse(_prepCtrl.text) ?? 0,
       cookTimeMinutes: int.tryParse(_cookCtrl.text) ?? 0,
       servings: int.tryParse(_servingsCtrl.text),
@@ -597,11 +703,9 @@ class _IngredientsPage extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     flex: 3,
-                    child: _IngredientField(
-                      title: 'Unit',
-                      initialValue: ing.unit,
-                      hintText: 'tsp',
-                      onChanged: (v) => onUpdate(i, RecipeIngredient(name: ing.name, quantity: ing.quantity, unit: v.isEmpty ? null : v, notes: ing.notes)),
+                    child: _UnitField(
+                      value: ing.unit,
+                      onChanged: (v) => onUpdate(i, RecipeIngredient(name: ing.name, quantity: ing.quantity, unit: v, notes: ing.notes)),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -630,6 +734,38 @@ class _IngredientsPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Unit picker, styled to match _IngredientField (title fixed above the
+/// box). A dropdown rather than free text so units stay consistent across
+/// recipes instead of accumulating spelling/abbreviation variants (tsp vs
+/// tsp. vs teaspoon). Optional — includes a blank option since not every
+/// ingredient needs a unit (e.g. "1 banana").
+class _UnitField extends StatelessWidget {
+  final String? value;
+  final ValueChanged<String?> onChanged;
+
+  const _UnitField({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Unit', style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 4),
+        DropdownButtonFormField<String?>(
+          initialValue: value != null && AppConstants.units.contains(value) ? value : null,
+          decoration: const InputDecoration(hintText: 'tsp', isDense: true),
+          items: [
+            const DropdownMenuItem<String?>(value: null, child: Text('—')),
+            ...AppConstants.units.map((u) => DropdownMenuItem<String?>(value: u, child: Text(u))),
+          ],
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 }

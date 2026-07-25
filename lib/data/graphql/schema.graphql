@@ -85,6 +85,18 @@ type RecipeMedia
   createdAt: AWSDateTime!
 }
 
+input RecipeMediaInput {
+  id: ID!
+  recipeId: ID!
+  s3Key: String!
+  url: AWSURL!
+  type: String
+  isCover: Boolean
+  sortOrder: Int
+  uploadedBy: ID!
+  createdAt: AWSDateTime!
+}
+
 type RecipeComment {
   id: ID!
   recipeId: ID!
@@ -247,6 +259,7 @@ input CreateRecipeInput {
   creatorAvatarUrl: AWSURL
   ingredients: AWSJSON
   steps: AWSJSON
+  media: [RecipeMediaInput]
   prepTimeMinutes: Int!
   cookTimeMinutes: Int!
   servings: Int
@@ -278,6 +291,7 @@ input UpdateRecipeInput {
   allergensLower: String
   ingredients: AWSJSON
   steps: AWSJSON
+  media: [RecipeMediaInput]
   prepTimeMinutes: Int
   cookTimeMinutes: Int
   servings: Int

@@ -4,6 +4,11 @@ class AppConstants {
   static const String appName = 'Bitty Bellies';
   static const String appTagline = 'Real recipes from real parents, from around the world.';
 
+  // Recipe media storage — matches the bucket/region configured in
+  // amplify_config.dart's awsS3StoragePlugin.
+  static const String s3MediaBucket = 'blw-recipes-media-324062893587-us-east-1';
+  static const String s3MediaRegion = 'us-east-1';
+
   // Pagination
   static const int pageSize = 20;
 
@@ -28,6 +33,23 @@ class AppConstants {
     'Finger food',
     'Family meal adaptation',
     'Mixed',
+  ];
+
+  // Ingredient measurement units
+  static const List<String> units = [
+    'tsp',
+    'tbsp',
+    'cup',
+    'ml',
+    'l',
+    'g',
+    'kg',
+    'oz',
+    'piece',
+    'slice',
+    'clove',
+    'pinch',
+    'to taste',
   ];
 
   // Meal categories

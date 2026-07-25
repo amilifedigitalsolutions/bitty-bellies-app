@@ -82,6 +82,8 @@ class RecipeMedia extends Equatable {
   final String type; // 'image' | 'video'
   final bool isCover;
   final int sortOrder;
+  final String uploadedBy;
+  final DateTime createdAt;
 
   const RecipeMedia({
     required this.id,
@@ -91,6 +93,8 @@ class RecipeMedia extends Equatable {
     this.type = 'image',
     this.isCover = false,
     this.sortOrder = 0,
+    required this.uploadedBy,
+    required this.createdAt,
   });
 
   factory RecipeMedia.fromJson(Map<String, dynamic> json) => RecipeMedia(
@@ -101,6 +105,8 @@ class RecipeMedia extends Equatable {
         type: (json['type'] as String?) ?? 'image',
         isCover: (json['isCover'] as bool?) ?? false,
         sortOrder: (json['sortOrder'] as int?) ?? 0,
+        uploadedBy: json['uploadedBy'] as String,
+        createdAt: DateTime.parse(json['createdAt'] as String),
       );
 
   Map<String, dynamic> toJson() => {
@@ -111,6 +117,8 @@ class RecipeMedia extends Equatable {
         'type': type,
         'isCover': isCover,
         'sortOrder': sortOrder,
+        'uploadedBy': uploadedBy,
+        'createdAt': createdAt.toUtc().toIso8601String(),
       };
 
   @override

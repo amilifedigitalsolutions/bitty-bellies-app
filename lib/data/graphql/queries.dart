@@ -10,7 +10,7 @@ class RecipeQueries {
           allergens prepTimeMinutes cookTimeMinutes servings
           savedCount commentCount feedbackCount questionCount averageRating
           isSponsored isPremium status publishedAt createdAt updatedAt
-          media { id url isCover sortOrder }
+          media { id recipeId url s3Key isCover sortOrder type uploadedBy createdAt }
         }
         nextToken
       }
@@ -27,7 +27,7 @@ class RecipeQueries {
         chokingHazardNotes safetyNotes storageReheatingNotes creatorNotes
         tags savedCount commentCount feedbackCount questionCount averageRating
         isSponsored isPremium status moderationNote publishedAt createdAt updatedAt
-        media { id url s3Key isCover sortOrder type }
+        media { id recipeId url s3Key isCover sortOrder type uploadedBy createdAt }
       }
     }
   ''';
@@ -36,9 +36,9 @@ class RecipeQueries {
     query RecipesByCreator($creatorId: ID!, $limit: Int, $nextToken: String) {
       recipesByCreatorId(creatorId: $creatorId, limit: $limit, nextToken: $nextToken) {
         items {
-          id title description ageStage texture cuisine status
+          id title description creatorId creatorName ageStage texture cuisine status
           savedCount commentCount averageRating createdAt updatedAt
-          media { id url isCover sortOrder }
+          media { id recipeId url s3Key isCover sortOrder type uploadedBy createdAt }
         }
         nextToken
       }
@@ -116,7 +116,7 @@ class RecipeMutations {
         chokingHazardNotes safetyNotes storageReheatingNotes creatorNotes
         tags savedCount commentCount feedbackCount questionCount averageRating
         isSponsored isPremium status moderationNote publishedAt createdAt updatedAt
-        media { id url s3Key isCover sortOrder type }
+        media { id recipeId url s3Key isCover sortOrder type uploadedBy createdAt }
       }
     }
   ''';

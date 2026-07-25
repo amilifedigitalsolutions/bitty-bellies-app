@@ -138,6 +138,11 @@ export class BlwRecipesStack extends cdk.Stack {
       resources: [`${mediaBucket.bucketArn}/public/*`],
     }));
 
+    // Authenticated users can upload/replace recipe cover photos — matches
+    // the public/ prefix the read policy above already covers.
+    mediaBucket.grantPut(authRole, 'public/*');
+    mediaBucket.grantDelete(authRole, 'public/*');
+
     // ──────────────────────────────────────────────────────────────────────
     // DynamoDB tables
     // ──────────────────────────────────────────────────────────────────────

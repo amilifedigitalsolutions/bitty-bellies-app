@@ -131,7 +131,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
   @override
   Future<Result<Recipe>> createRecipe(Recipe recipe) async {
     try {
-      final input = _recipeToInput(recipe.copyWith(id: _uuid.v4()));
+      final input = _recipeToInput(recipe);
       final request = GraphQLRequest<String>(
         document: RecipeMutations.createRecipe,
         variables: {'input': input},
@@ -590,6 +590,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
         'creatorName': recipe.creatorName,
         'ingredients': jsonEncode(recipe.ingredients.map((i) => i.toJson()).toList()),
         'steps': jsonEncode(recipe.steps.map((s) => s.toJson()).toList()),
+        'media': recipe.media.map((m) => m.toJson()).toList(),
         'prepTimeMinutes': recipe.prepTimeMinutes,
         'cookTimeMinutes': recipe.cookTimeMinutes,
         'servings': recipe.servings,
