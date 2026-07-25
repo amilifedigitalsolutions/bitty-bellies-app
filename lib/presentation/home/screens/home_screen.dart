@@ -24,13 +24,14 @@ class HomeScreen extends ConsumerWidget {
           // App bar
           SliverAppBar(
             floating: true,
-            toolbarHeight: 84,
+            toolbarHeight: 96,
+            centerTitle: true,
             title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/logos/logo-long.png', height: 46, fit: BoxFit.contain, alignment: Alignment.centerLeft),
+                Image.asset('assets/logos/logo-long.png', height: 60, fit: BoxFit.contain),
                 if (user != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text('Hi, ${user.displayName}!', style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ],

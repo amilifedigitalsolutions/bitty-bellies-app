@@ -11,10 +11,12 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 64,
+        centerTitle: true,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset('assets/logos/logo-long.png', height: 22, fit: BoxFit.contain),
+            Image.asset('assets/logos/logo-long.png', height: 40, fit: BoxFit.contain),
             const SizedBox(width: 10),
             const Text('Settings'),
           ],

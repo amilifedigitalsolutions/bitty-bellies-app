@@ -3,21 +3,26 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Pulled directly from assets/logos/logo-long.png: gold shadow/outline,
-  // teal wordmark, purple "by Muna" signature accent. Gold leads as
-  // primary — warmer and more food/comfort-appropriate for a baby-led
-  // weaning app than a bright saturated teal would be; teal becomes the
-  // secondary accent instead of the dominant tone.
+  // Pulled directly from assets/logos/logo-long.png: gold shadow/outline
+  // as primary, and the purple → blue-violet gradient from the "by Muna"
+  // signature as the two accents. No teal/cyan — the whole palette comes
+  // from the gold wordmark shadow plus the signature gradient, read as
+  // one cohesive family rather than mixing in the separate wordmark hue.
   static const Color primary = Color(0xFFFFBD59);      // logo gold
   static const Color primaryLight = Color(0xFFFFDBA4);
   static const Color primaryDark = Color(0xFFBF8E43);
-  static const Color secondary = Color(0xFF0CC0DF);    // logo teal
-  static const Color secondaryLight = Color(0xFF92E3F1);
-  static const Color secondaryDark = Color(0xFF08869C);
-  static const Color accent = Color(0xFF8454B4);       // logo signature purple
-  static const Color background = Color(0xFFFAF7F4);   // off-white warm
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF5EFE9);
+  static const Color secondary = Color(0xFF8454B4);    // signature purple
+  static const Color secondaryLight = Color(0xFFC8B2DD);
+  static const Color secondaryDark = Color(0xFF633F87);
+  static const Color accent = Color(0xFF546CC0);       // signature blue-violet
+  static const Color accentLight = Color(0xFFB2BDE3);
+  // Warmer and more differentiated than the previous near-white pair —
+  // background reads as a genuine warm cream rather than off-white, and
+  // surface (cards) sits a step lighter than background so cards read as
+  // distinct layers instead of blending into a flat white page.
+  static const Color background = Color(0xFFF5EEE1);
+  static const Color surface = Color(0xFFFFFBF3);
+  static const Color surfaceVariant = Color(0xFFEFE1CC);
   // primary (gold) is light, so its "on" color needs to be dark to stay
   // readable — a bright saturated color like the old terracotta or the
   // teal secondary could take white, but gold can't.
