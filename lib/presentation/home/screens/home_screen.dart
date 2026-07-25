@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../domain/models/recipe_filter.dart';
@@ -17,20 +18,21 @@ class HomeScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider).valueOrNull;
     final recipesAsync = ref.watch(recipeListProvider);
     final filter = ref.watch(recipeFilterProvider);
-    final cuisines = ref.watch(availableCuisinesProvider).valueOrNull ?? const [];
-
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           // App bar
           SliverAppBar(
             floating: true,
+            toolbarHeight: 84,
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.asset('assets/logos/logo-long.png', height: 32, fit: BoxFit.contain, alignment: Alignment.centerLeft),
-                if (user != null)
-                  Text('Hi, ${user.displayName}!', style: Theme.of(context).textTheme.bodySmall),
+                Image.asset('assets/logos/logo-long.png', height: 46, fit: BoxFit.contain, alignment: Alignment.centerLeft),
+                if (user != null) ...[
+                  const SizedBox(height: 2),
+                  Text('Hi, ${user.displayName}!', style: Theme.of(context).textTheme.bodyMedium),
+                ],
               ],
             ),
             actions: [
@@ -52,36 +54,39 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
 
-          // Cuisine quick-filter chips
+          // Meal-type quick-filter chips — a faster filter for what a
+          // parent needs right now (breakfast/lunch/dinner/snack) than
+          // browsing by cuisine, which still lives in Search's full filter
+          // panel.
           SliverToBoxAdapter(
             child: SizedBox(
               height: 48,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: cuisines.length + 1,
+                itemCount: AppConstants.mealCategories.length + 1,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (context, i) {
                   if (i == 0) {
-                    final isAll = filter.cuisines.isEmpty;
+                    final isAll = filter.mealCategories.isEmpty;
                     return FilterChip(
                       label: const Text('All'),
                       selected: isAll,
                       onSelected: (_) => ref
                           .read(recipeFilterProvider.notifier)
-                          .update((f) => f.copyWith(cuisines: [])),
+                          .update((f) => f.copyWith(mealCategories: [])),
                     );
                   }
-                  final cuisine = cuisines[i - 1];
-                  final selected = filter.cuisines.contains(cuisine);
+                  final mealType = AppConstants.mealCategories[i - 1];
+                  final selected = filter.mealCategories.contains(mealType);
                   return FilterChip(
-                    label: Text(cuisine),
+                    label: Text(mealType),
                     selected: selected,
                     onSelected: (v) {
                       final updated = selected
-                          ? (List.of(filter.cuisines)..remove(cuisine))
-                          : [...filter.cuisines, cuisine];
-                      ref.read(recipeFilterProvider.notifier).update((f) => f.copyWith(cuisines: updated));
+                          ? (List.of(filter.mealCategories)..remove(mealType))
+                          : [...filter.mealCategories, mealType];
+                      ref.read(recipeFilterProvider.notifier).update((f) => f.copyWith(mealCategories: updated));
                     },
                   );
                 },
