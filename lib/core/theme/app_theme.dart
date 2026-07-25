@@ -3,16 +3,25 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const Color primary = Color(0xFFE8845A);      // warm terracotta
-  static const Color primaryLight = Color(0xFFF5B59B);
-  static const Color primaryDark = Color(0xFFC4613A);
-  static const Color secondary = Color(0xFF5A9E8A);    // sage green
-  static const Color secondaryLight = Color(0xFF8DC4B5);
-  static const Color accent = Color(0xFFF2C94C);       // warm yellow
+  // Pulled directly from assets/logos/logo-long.png: gold shadow/outline,
+  // teal wordmark, purple "by Muna" signature accent. Gold leads as
+  // primary — warmer and more food/comfort-appropriate for a baby-led
+  // weaning app than a bright saturated teal would be; teal becomes the
+  // secondary accent instead of the dominant tone.
+  static const Color primary = Color(0xFFFFBD59);      // logo gold
+  static const Color primaryLight = Color(0xFFFFDBA4);
+  static const Color primaryDark = Color(0xFFBF8E43);
+  static const Color secondary = Color(0xFF0CC0DF);    // logo teal
+  static const Color secondaryLight = Color(0xFF92E3F1);
+  static const Color secondaryDark = Color(0xFF08869C);
+  static const Color accent = Color(0xFF8454B4);       // logo signature purple
   static const Color background = Color(0xFFFAF7F4);   // off-white warm
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceVariant = Color(0xFFF5EFE9);
-  static const Color onPrimary = Color(0xFFFFFFFF);
+  // primary (gold) is light, so its "on" color needs to be dark to stay
+  // readable — a bright saturated color like the old terracotta or the
+  // teal secondary could take white, but gold can't.
+  static const Color onPrimary = Color(0xFF2D2015);
   static const Color onSecondary = Color(0xFFFFFFFF);
   static const Color onBackground = Color(0xFF2D2015);
   static const Color onSurface = Color(0xFF2D2015);
@@ -40,9 +49,9 @@ class AppTheme {
           secondary: AppColors.secondary,
           onSecondary: AppColors.onSecondary,
           secondaryContainer: AppColors.secondaryLight,
-          onSecondaryContainer: Color(0xFF1A3D33),
+          onSecondaryContainer: AppColors.onBackground,
           tertiary: AppColors.accent,
-          onTertiary: AppColors.onBackground,
+          onTertiary: Colors.white,
           error: AppColors.error,
           onError: Colors.white,
           surface: AppColors.surface,

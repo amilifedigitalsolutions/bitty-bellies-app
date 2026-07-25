@@ -38,30 +38,36 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: TextField(
-          controller: _searchCtrl,
-          autofocus: false,
-          onChanged: _updateQuery,
-          decoration: InputDecoration(
-            hintText: 'Search recipes, ingredients, cultures...',
-            border: InputBorder.none,
-            suffixIcon: _searchCtrl.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchCtrl.clear();
-                      _updateQuery('');
-                    },
-                  )
-                : null,
-          ),
-        ),
+        title: Image.asset('assets/logos/logo-long.png', height: 28, fit: BoxFit.contain, alignment: Alignment.centerLeft),
         actions: [
           IconButton(
             icon: Icon(_showFilters ? Icons.filter_list_off : Icons.filter_list),
             onPressed: () => setState(() => _showFilters = !_showFilters),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: TextField(
+              controller: _searchCtrl,
+              autofocus: false,
+              onChanged: _updateQuery,
+              decoration: InputDecoration(
+                hintText: 'Search recipes, ingredients, cultures...',
+                suffixIcon: _searchCtrl.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          _updateQuery('');
+                        },
+                      )
+                    : null,
+              ),
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [

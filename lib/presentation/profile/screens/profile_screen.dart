@@ -95,6 +95,11 @@ class _AuthenticatedProfileState extends ConsumerState<_AuthenticatedProfile>
               padding: const EdgeInsets.fromLTRB(16, 56, 16, 0),
               child: Column(
                 children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Image.asset('assets/logos/logo-long.png', height: 28, fit: BoxFit.contain),
+                  ),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       CircleAvatar(

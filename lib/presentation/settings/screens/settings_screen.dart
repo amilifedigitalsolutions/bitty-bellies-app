@@ -10,7 +10,16 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/logos/logo-long.png', height: 22, fit: BoxFit.contain),
+            const SizedBox(width: 10),
+            const Text('Settings'),
+          ],
+        ),
+      ),
       body: ListView(
         children: [
           _Section(title: 'Account', tiles: [
