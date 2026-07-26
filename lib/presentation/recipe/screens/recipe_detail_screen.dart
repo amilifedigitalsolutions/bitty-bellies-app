@@ -41,7 +41,7 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -236,8 +236,8 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
             ),
           ),
 
-          // Tab bar: Recipe | Comments | Questions — pinned so it stays
-          // visible while the tab content below scrolls.
+          // Tab bar: Recipe | Comments — pinned so it stays visible while
+          // the tab content below scrolls.
           SliverPersistentHeader(
             pinned: true,
             delegate: _TabBarDelegate(
@@ -246,7 +246,6 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
                 tabs: const [
                   Tab(text: 'Recipe'),
                   Tab(text: 'Comments'),
-                  Tab(text: 'Questions'),
                 ],
               ),
             ),
@@ -257,7 +256,6 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
           children: [
             _RecipeTab(recipe: recipe),
             _CommentsTab(recipeId: recipe.id),
-            _QuestionsTab(recipeId: recipe.id, creatorId: recipe.creatorId),
           ],
         ),
       ),
@@ -390,8 +388,26 @@ class _CommentsTabState extends ConsumerState<_CommentsTab> {
   final _ctrl = TextEditingController();
   bool _sending = false;
 
+  // commentsByRecipeId queries a GSI, which AppSync can't read with strong
+  // consistency — an invalidated refetch right after posting can race
+  // replication lag and momentarily miss the new/edited comment. _overrides
+  // holds locally-known-fresh versions (new or edited) merged over whatever
+  // the fetch returns, so changes always render instantly regardless of
+  // GSI timing; _hiddenIds does the same for deletes.
+  final Map<String, RecipeComment> _overrides = {};
+  final Set<String> _hiddenIds = {};
+
   @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  List<RecipeComment> _merge(List<RecipeComment> fetched) {
+    final byId = {for (final c in fetched) c.id: c};
+    byId.addAll(_overrides);
+    for (final id in _hiddenIds) {
+      byId.remove(id);
+    }
+    return byId.values.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  }
 
   Future<void> _submit() async {
     final text = _ctrl.text.trim();
@@ -402,8 +418,9 @@ class _CommentsTabState extends ConsumerState<_CommentsTab> {
     final repo = ref.read(recipeRepositoryProvider);
     final result = await repo.addComment(widget.recipeId, text);
     result.when(
-      success: (_) {
+      success: (comment) {
         _ctrl.clear();
+        setState(() => _overrides[comment.id] = comment);
         ref.invalidate(recipeCommentsProvider(widget.recipeId));
       },
       failure: (e) {
@@ -417,39 +434,124 @@ class _CommentsTabState extends ConsumerState<_CommentsTab> {
     if (mounted) setState(() => _sending = false);
   }
 
+  void _onCommentUpdated(RecipeComment updated) {
+    setState(() => _overrides[updated.id] = updated);
+    ref.invalidate(recipeCommentsProvider(widget.recipeId));
+  }
+
+  void _onCommentDeleted(String commentId) {
+    setState(() {
+      _overrides.remove(commentId);
+      _hiddenIds.add(commentId);
+    });
+    ref.invalidate(recipeCommentsProvider(widget.recipeId));
+  }
+
   @override
   Widget build(BuildContext context) {
     final commentsAsync = ref.watch(recipeCommentsProvider(widget.recipeId));
+    final isSignedIn = ref.watch(currentUserProvider).valueOrNull != null;
     return Column(
       children: [
         Expanded(
           child: commentsAsync.when(
-            data: (comments) => comments.isEmpty
-                ? const EmptyView(message: 'No comments yet', subMessage: 'Be the first to share your thoughts.')
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: comments.length,
-                    itemBuilder: (_, i) => _CommentTile(comment: comments[i], recipeId: widget.recipeId),
-                  ),
+            data: (comments) {
+              final merged = _merge(comments);
+              return merged.isEmpty
+                  ? const EmptyView(message: 'No comments yet', subMessage: 'Be the first to share your thoughts.')
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: merged.length,
+                      itemBuilder: (_, i) => _CommentTile(
+                        comment: merged[i],
+                        recipeId: widget.recipeId,
+                        onUpdated: _onCommentUpdated,
+                        onDeleted: _onCommentDeleted,
+                      ),
+                    );
+            },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => ErrorView(message: e.toString(), onRetry: () => ref.invalidate(recipeCommentsProvider(widget.recipeId))),
           ),
         ),
-        _CommentInput(controller: _ctrl, sending: _sending, onSend: _submit),
+        isSignedIn
+            ? _CommentInput(controller: _ctrl, sending: _sending, onSend: _submit)
+            : _SignInToCommentPrompt(onTap: () => context.push('/login')),
       ],
     );
   }
 }
 
-class _CommentTile extends ConsumerWidget {
+class _CommentTile extends ConsumerStatefulWidget {
   final RecipeComment comment;
   final String recipeId;
-  const _CommentTile({required this.comment, required this.recipeId});
+  final ValueChanged<RecipeComment> onUpdated;
+  final ValueChanged<String> onDeleted;
+  const _CommentTile({
+    required this.comment,
+    required this.recipeId,
+    required this.onUpdated,
+    required this.onDeleted,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_CommentTile> createState() => _CommentTileState();
+}
+
+class _CommentTileState extends ConsumerState<_CommentTile> {
+  bool _editing = false;
+  bool _saving = false;
+  late final TextEditingController _editCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _editCtrl = TextEditingController(text: widget.comment.body);
+  }
+
+  @override
+  void dispose() { _editCtrl.dispose(); super.dispose(); }
+
+  Future<void> _saveEdit() async {
+    final body = _editCtrl.text.trim();
+    if (body.isEmpty || body == widget.comment.body) {
+      setState(() => _editing = false);
+      return;
+    }
+    setState(() => _saving = true);
+    final result = await ref.read(recipeRepositoryProvider).updateComment(widget.comment.id, body);
+    if (!mounted) return;
+    result.when(
+      success: (updated) {
+        widget.onUpdated(updated);
+        setState(() { _editing = false; _saving = false; });
+      },
+      failure: (e) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not update comment: ${e.message}')),
+        );
+      },
+    );
+  }
+
+  Future<void> _delete() async {
+    final result = await ref.read(recipeRepositoryProvider).deleteComment(widget.comment.id, widget.recipeId);
+    if (!mounted) return;
+    result.when(
+      success: (_) => widget.onDeleted(widget.comment.id),
+      failure: (e) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not delete comment: ${e.message}')),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final comment = widget.comment;
     final user = ref.watch(currentUserProvider).valueOrNull;
     final isOwn = user?.id == comment.authorId;
+    final wasEdited = comment.updatedAt != null && comment.updatedAt != comment.createdAt;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -473,20 +575,56 @@ class _CommentTile extends ConsumerWidget {
                       _timeAgo(comment.createdAt),
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
-                    if (isOwn)
+                    if (isOwn && !_editing) ...[
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 16),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => setState(() => _editing = true),
+                      ),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, size: 16),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
-                        onPressed: () async {
-                          await ref.read(recipeRepositoryProvider).deleteComment(comment.id);
-                          ref.invalidate(recipeCommentsProvider(recipeId));
-                        },
+                        onPressed: _delete,
                       ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(comment.body, style: Theme.of(context).textTheme.bodyMedium),
+                if (_editing) ...[
+                  TextField(
+                    controller: _editCtrl,
+                    maxLines: null,
+                    autofocus: true,
+                    decoration: const InputDecoration(isDense: true),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: _saving
+                            ? null
+                            : () => setState(() { _editing = false; _editCtrl.text = comment.body; }),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: _saving ? null : _saveEdit,
+                        child: _saving
+                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Text('Save'),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  Text(comment.body, style: Theme.of(context).textTheme.bodyMedium),
+                  if (wasEdited)
+                    Text(
+                      '(edited)',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(fontStyle: FontStyle.italic),
+                    ),
+                ],
               ],
             ),
           ),
@@ -504,146 +642,76 @@ class _CommentInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The colored background fills all the way to the screen edge; only the
+    // content inside is padded off the home indicator, so there's no gap of
+    // bare screen-background color below the bar on notched devices.
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 8, 16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(top: BorderSide(color: AppColors.border)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              maxLines: null,
-              decoration: const InputDecoration(hintText: 'Add a comment...', border: InputBorder.none),
-            ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  maxLines: null,
+                  decoration: const InputDecoration(hintText: 'Add a comment...', border: InputBorder.none),
+                ),
+              ),
+              IconButton(
+                icon: sending
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.send, color: AppColors.primary),
+                onPressed: sending ? null : onSend,
+              ),
+            ],
           ),
-          IconButton(
-            icon: sending
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.send, color: AppColors.primary),
-            onPressed: sending ? null : onSend,
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-// ── Tab: Questions ────────────────────────────────────────────────────────────
-
-class _QuestionsTab extends ConsumerStatefulWidget {
-  final String recipeId;
-  final String creatorId;
-  const _QuestionsTab({required this.recipeId, required this.creatorId});
-
-  @override
-  ConsumerState<_QuestionsTab> createState() => _QuestionsTabState();
-}
-
-class _QuestionsTabState extends ConsumerState<_QuestionsTab> {
-  final _ctrl = TextEditingController();
-  bool _sending = false;
-
-  @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
-
-  Future<void> _submit() async {
-    final text = _ctrl.text.trim();
-    if (text.isEmpty) return;
-    final user = ref.read(currentUserProvider).valueOrNull;
-    if (user == null) { context.push('/login'); return; }
-    setState(() => _sending = true);
-    final repo = ref.read(recipeRepositoryProvider);
-    final result = await repo.addQuestion(widget.recipeId, text);
-    result.when(
-      success: (_) {
-        _ctrl.clear();
-        ref.invalidate(recipeQuestionsProvider(widget.recipeId));
-      },
-      failure: (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Could not post question: ${e.message}')),
-          );
-        }
-      },
-    );
-    if (mounted) setState(() => _sending = false);
-  }
+class _SignInToCommentPrompt extends StatelessWidget {
+  final VoidCallback onTap;
+  const _SignInToCommentPrompt({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final questionsAsync = ref.watch(recipeQuestionsProvider(widget.recipeId));
-    return Column(
-      children: [
-        Expanded(
-          child: questionsAsync.when(
-            data: (questions) => questions.isEmpty
-                ? const EmptyView(message: 'No questions yet', subMessage: 'Ask the creator anything about this recipe.')
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: questions.length,
-                    itemBuilder: (_, i) => _QuestionTile(question: questions[i]),
-                  ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => ErrorView(message: e.toString()),
-          ),
-        ),
-        _CommentInput(
-          controller: _ctrl,
-          sending: _sending,
-          onSend: _submit,
-        ),
-      ],
-    );
-  }
-}
-
-class _QuestionTile extends StatelessWidget {
-  final RecipeQuestion question;
-  const _QuestionTile({required this.question});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(radius: 14, backgroundColor: AppColors.primaryLight, child: Text(question.authorName[0])),
-              const SizedBox(width: 8),
-              Text(question.authorName, style: Theme.of(context).textTheme.titleSmall),
-              const Spacer(),
-              Text(_timeAgo(question.createdAt), style: Theme.of(context).textTheme.labelSmall),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(question.question, style: Theme.of(context).textTheme.bodyMedium),
-          if (question.isAnsweredByCreator && question.creatorAnswer != null) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.secondaryLight.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.secondaryLight),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Creator replied:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-                  const SizedBox(height: 4),
-                  Text(question.creatorAnswer!, style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ),
+    // The colored background fills all the way to the screen edge; only the
+    // content inside is padded off the home indicator, so there's no gap of
+    // bare screen-background color below the bar on notched devices.
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                const Icon(Icons.lock_outline, size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 8),
+                Text(
+                  'Sign in to add a comment',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
             ),
-          ],
-          const Divider(height: 24),
-        ],
+          ),
+        ),
       ),
     );
   }

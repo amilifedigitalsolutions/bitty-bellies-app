@@ -290,6 +290,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
       final request = GraphQLRequest<String>(
         document: RecipeQueries.getComments,
         variables: {'recipeId': recipeId, 'limit': 50, if (nextToken != null) 'nextToken': nextToken},
+        authorizationMode: APIAuthorizationType.iam,
       );
       final response = await Amplify.API.query(request: request).response;
       if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
@@ -333,18 +334,49 @@ class RecipeRepositoryImpl implements RecipeRepository {
   }
 
   @override
-  Future<Result<void>> deleteComment(String commentId) async {
+  Future<Result<RecipeComment>> updateComment(String commentId, String body) async {
     try {
       final request = GraphQLRequest<String>(
-        document: RecipeMutations.deleteComment,
-        variables: {'input': {'id': commentId}},
+        document: RecipeMutations.updateComment,
+        variables: {'input': {'id': commentId, 'body': body}},
       );
       final response = await Amplify.API.mutate(request: request).response;
       if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
-      return const Success(null);
+      final data = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
+      return Success(RecipeComment.fromJson(data['updateRecipeComment'] as Map<String, dynamic>));
     } catch (e) {
       return Failure(UnknownError(e.toString()));
     }
+  }
+
+  @override
+  Future<Result<void>> deleteComment(String commentId, String recipeId) async {
+    try {
+      // No reply UI exists yet to create them, but the schema supports
+      // parentCommentId — deleting a top-level comment should still take
+      // any replies with it rather than leaving them orphaned.
+      final commentsResult = await getComments(recipeId);
+      final replies = commentsResult.when(
+        success: (comments) => comments.where((c) => c.parentCommentId == commentId).toList(),
+        failure: (_) => const <RecipeComment>[],
+      );
+      for (final reply in replies) {
+        await _deleteCommentItem(reply.id);
+      }
+      return _deleteCommentItem(commentId);
+    } catch (e) {
+      return Failure(UnknownError(e.toString()));
+    }
+  }
+
+  Future<Result<void>> _deleteCommentItem(String commentId) async {
+    final request = GraphQLRequest<String>(
+      document: RecipeMutations.deleteComment,
+      variables: {'input': {'id': commentId}},
+    );
+    final response = await Amplify.API.mutate(request: request).response;
+    if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
+    return const Success(null);
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -386,80 +418,6 @@ class RecipeRepositoryImpl implements RecipeRepository {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Questions
-  // ──────────────────────────────────────────────────────────────────────────
-
-  @override
-  Future<Result<List<RecipeQuestion>>> getQuestions(String recipeId, {String? nextToken}) async {
-    try {
-      final request = GraphQLRequest<String>(
-        document: RecipeQueries.getQuestions,
-        variables: {'recipeId': recipeId, 'limit': 50},
-      );
-      final response = await Amplify.API.query(request: request).response;
-      if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
-      final data = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
-      final items = (data['questionsByRecipeId']?['items'] as List? ?? [])
-          .map((e) => RecipeQuestion.fromJson(e as Map<String, dynamic>))
-          .where((q) => !q.isHidden)
-          .toList();
-      return Success(items);
-    } catch (e) {
-      return Failure(UnknownError(e.toString()));
-    }
-  }
-
-  @override
-  Future<Result<RecipeQuestion>> addQuestion(String recipeId, String question) async {
-    try {
-      final user = await Amplify.Auth.getCurrentUser();
-      final id = _uuid.v4();
-      final request = GraphQLRequest<String>(
-        document: RecipeMutations.createQuestion,
-        variables: {
-          'input': {
-            'id': id,
-            'recipeId': recipeId,
-            'authorId': user.userId,
-            'authorName': user.username,
-            'question': question,
-            'createdAt': DateTime.now().toUtc().toIso8601String(),
-          }
-        },
-      );
-      final response = await Amplify.API.mutate(request: request).response;
-      if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
-      final data = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
-      return Success(RecipeQuestion.fromJson(data['createRecipeQuestion'] as Map<String, dynamic>));
-    } catch (e) {
-      return Failure(UnknownError(e.toString()));
-    }
-  }
-
-  @override
-  Future<Result<RecipeQuestion>> answerQuestion(String questionId, String answer) async {
-    try {
-      final request = GraphQLRequest<String>(
-        document: RecipeMutations.answerQuestion,
-        variables: {
-          'input': {
-            'id': questionId,
-            'isAnsweredByCreator': true,
-            'creatorAnswer': answer,
-            'answeredAt': DateTime.now().toUtc().toIso8601String(),
-          }
-        },
-      );
-      final response = await Amplify.API.mutate(request: request).response;
-      if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
-      final data = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
-      return Success(RecipeQuestion.fromJson(data['updateRecipeQuestion'] as Map<String, dynamic>));
-    } catch (e) {
-      return Failure(UnknownError(e.toString()));
-    }
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
   // Reports
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -473,15 +431,9 @@ class RecipeRepositoryImpl implements RecipeRepository {
     return _createReport(recipeId: recipeId, commentId: commentId, reason: reason, details: details);
   }
 
-  @override
-  Future<Result<void>> reportQuestion(String questionId, String recipeId, String reason, {String? details}) async {
-    return _createReport(recipeId: recipeId, questionId: questionId, reason: reason, details: details);
-  }
-
   Future<Result<void>> _createReport({
     required String recipeId,
     String? commentId,
-    String? questionId,
     required String reason,
     String? details,
   }) async {
@@ -494,7 +446,6 @@ class RecipeRepositoryImpl implements RecipeRepository {
             'id': _uuid.v4(),
             'recipeId': recipeId,
             if (commentId != null) 'commentId': commentId,
-            if (questionId != null) 'questionId': questionId,
             'reporterId': user.userId,
             'reason': reason,
             if (details != null) 'details': details,

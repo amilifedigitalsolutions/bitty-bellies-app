@@ -13,7 +13,7 @@ class FeatureFlags {
   static const bool paidCreatorFeatures = false;
   static const bool mealPlanning = false;
 
-  // Social / DMs (off for MVP — questions are public)
+  // Social / DMs (off for MVP)
   static const bool privateMessaging = false;
 
   // Auth providers

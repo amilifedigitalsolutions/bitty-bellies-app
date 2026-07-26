@@ -25,21 +25,16 @@ abstract class RecipeRepository {
   // Comments
   Future<Result<List<RecipeComment>>> getComments(String recipeId, {String? nextToken});
   Future<Result<RecipeComment>> addComment(String recipeId, String body, {String? parentCommentId});
-  Future<Result<void>> deleteComment(String commentId);
+  Future<Result<RecipeComment>> updateComment(String commentId, String body);
+  Future<Result<void>> deleteComment(String commentId, String recipeId);
 
   // Feedback
   Future<Result<List<RecipeFeedback>>> getFeedback(String recipeId, {String? nextToken});
   Future<Result<RecipeFeedback>> addFeedback(String recipeId, RecipeFeedback feedback);
 
-  // Questions
-  Future<Result<List<RecipeQuestion>>> getQuestions(String recipeId, {String? nextToken});
-  Future<Result<RecipeQuestion>> addQuestion(String recipeId, String question);
-  Future<Result<RecipeQuestion>> answerQuestion(String questionId, String answer);
-
   // Reports
   Future<Result<void>> reportRecipe(String recipeId, String reason, {String? details});
   Future<Result<void>> reportComment(String commentId, String recipeId, String reason, {String? details});
-  Future<Result<void>> reportQuestion(String questionId, String recipeId, String reason, {String? details});
 
   // Email share
   Future<Result<void>> emailRecipe(String recipeId, String toEmail);

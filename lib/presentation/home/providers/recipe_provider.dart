@@ -76,10 +76,3 @@ final recipeFeedbackProvider = FutureProvider.autoDispose.family((ref, String re
   final result = await repo.getFeedback(recipeId);
   return result.when(success: (f) => f, failure: (e) => throw e);
 });
-
-// Questions for a recipe
-final recipeQuestionsProvider = FutureProvider.autoDispose.family((ref, String recipeId) async {
-  final repo = ref.read(recipeRepositoryProvider);
-  final result = await repo.getQuestions(recipeId);
-  return result.when(success: (q) => q, failure: (e) => throw e);
-});

@@ -49,7 +49,7 @@ class SettingsScreen extends ConsumerWidget {
                 context: context,
                 builder: (_) => AlertDialog(
                   title: const Text('Reporting'),
-                  content: const Text('Use the flag icon on any recipe, comment, or question to report it. Our moderation team reviews all reports and takes action to keep the community safe.'),
+                  content: const Text('Use the flag icon on any recipe or comment to report it. Our moderation team reviews all reports and takes action to keep the community safe.'),
                   actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
                 ),
               );

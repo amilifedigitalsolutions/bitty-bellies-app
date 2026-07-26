@@ -208,18 +208,6 @@ export class BlwRecipesStack extends cdk.Stack {
       sortKey: { name: 'createdAt', type: dynamodb.AttributeType.STRING },
     });
 
-    const questionsTable = new dynamodb.Table(this, 'QuestionsTable', {
-      tableName: 'blw-recipe-questions',
-      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
-    });
-    questionsTable.addGlobalSecondaryIndex({
-      indexName: 'byRecipeId',
-      partitionKey: { name: 'recipeId', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'createdAt', type: dynamodb.AttributeType.STRING },
-    });
-
     const reportsTable = new dynamodb.Table(this, 'ReportsTable', {
       tableName: 'blw-recipe-reports',
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
@@ -280,7 +268,6 @@ export class BlwRecipesStack extends cdk.Stack {
     const usersDS = api.addDynamoDbDataSource('UsersDS', usersTable);
     const commentsDS = api.addDynamoDbDataSource('CommentsDS', commentsTable);
     const feedbackDS = api.addDynamoDbDataSource('FeedbackDS', feedbackTable);
-    const questionsDS = api.addDynamoDbDataSource('QuestionsDS', questionsTable);
     const reportsDS = api.addDynamoDbDataSource('ReportsDS', reportsTable);
     const savedDS = api.addDynamoDbDataSource('SavedDS', savedRecipesTable);
 
@@ -393,36 +380,6 @@ export class BlwRecipesStack extends cdk.Stack {
     feedbackDS.createResolver('FeedbackByRecipeId', {
       typeName: 'Query',
       fieldName: 'feedbackByRecipeId',
-      requestMappingTemplate: appsync.MappingTemplate.fromString(`
-{
-  "version": "2017-02-28",
-  "operation": "Query",
-  "index": "byRecipeId",
-  "query": {
-    "expression": "recipeId = :recipeId",
-    "expressionValues": {
-      ":recipeId": $util.dynamodb.toDynamoDBJson($context.args.recipeId)
-    }
-  },
-  "limit": $util.defaultIfNull($context.args.limit, 50),
-  #if($context.args.nextToken)
-    "nextToken": "$context.args.nextToken"
-  #end
-}
-`),
-      responseMappingTemplate: appsync.MappingTemplate.fromString(`
-{
-  "items": $util.toJson($context.result.items),
-  #if($context.result.nextToken)
-    "nextToken": "$context.result.nextToken"
-  #end
-}
-`),
-    });
-
-    questionsDS.createResolver('QuestionsByRecipeId', {
-      typeName: 'Query',
-      fieldName: 'questionsByRecipeId',
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
 {
   "version": "2017-02-28",
@@ -604,6 +561,34 @@ export class BlwRecipesStack extends cdk.Stack {
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
     });
 
+    commentsDS.createResolver('UpdateRecipeComment', {
+      typeName: 'Mutation',
+      fieldName: 'updateRecipeComment',
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+{
+  "version": "2017-02-28",
+  "operation": "UpdateItem",
+  "key": {
+    "id": $util.dynamodb.toDynamoDBJson($context.args.input.id)
+  },
+  "update": {
+    "expression": "SET body = :body, updatedAt = :updatedAt",
+    "expressionValues": {
+      ":body": $util.dynamodb.toDynamoDBJson($context.args.input.body),
+      ":updatedAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
+    }
+  },
+  "condition": {
+    "expression": "authorId = :authorId",
+    "expressionValues": {
+      ":authorId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub)
+    }
+  }
+}
+`),
+      responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
+    });
+
     commentsDS.createResolver('DeleteRecipeComment', {
       typeName: 'Mutation',
       fieldName: 'deleteRecipeComment',
@@ -613,6 +598,12 @@ export class BlwRecipesStack extends cdk.Stack {
   "operation": "DeleteItem",
   "key": {
     "id": $util.dynamodb.toDynamoDBJson($context.args.input.id)
+  },
+  "condition": {
+    "expression": "authorId = :authorId",
+    "expressionValues": {
+      ":authorId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub)
+    }
   }
 }
 `),
@@ -635,44 +626,6 @@ export class BlwRecipesStack extends cdk.Stack {
   "condition": {
     "expression": "attribute_not_exists(id)"
   }
-}
-`),
-      responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
-    });
-
-    // ── Mutations: Questions ──
-
-    questionsDS.createResolver('CreateRecipeQuestion', {
-      typeName: 'Mutation',
-      fieldName: 'createRecipeQuestion',
-      requestMappingTemplate: appsync.MappingTemplate.fromString(`
-{
-  "version": "2017-02-28",
-  "operation": "PutItem",
-  "key": {
-    "id": $util.dynamodb.toDynamoDBJson($util.defaultIfNullOrBlank($context.args.input.id, $util.autoId()))
-  },
-  "attributeValues": $util.dynamodb.toMapValuesJson($context.args.input),
-  "condition": {
-    "expression": "attribute_not_exists(id)"
-  }
-}
-`),
-      responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
-    });
-
-    questionsDS.createResolver('UpdateRecipeQuestion', {
-      typeName: 'Mutation',
-      fieldName: 'updateRecipeQuestion',
-      requestMappingTemplate: appsync.MappingTemplate.fromString(`
-{
-  "version": "2017-02-28",
-  "operation": "UpdateItem",
-  "key": {
-    "id": $util.dynamodb.toDynamoDBJson($context.args.input.id)
-  },
-  #set($input = $util.map.copyAndRemoveAllKeys($context.args.input, ["id"]))
-  "update": $util.dynamodb.toMapValuesJson($input)
 }
 `),
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),

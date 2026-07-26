@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Pulled directly from assets/logos/logo-long.png: gold shadow/outline
-  // as primary, and the purple → blue-violet gradient from the "by Muna"
-  // signature as the two accents. No teal/cyan — the whole palette comes
-  // from the gold wordmark shadow plus the signature gradient, read as
-  // one cohesive family rather than mixing in the separate wordmark hue.
-  static const Color primary = Color(0xFFFFBD59);      // logo gold
-  static const Color primaryLight = Color(0xFFFFDBA4);
-  static const Color primaryDark = Color(0xFFBF8E43);
-  static const Color secondary = Color(0xFF8454B4);    // signature purple
-  static const Color secondaryLight = Color(0xFFC8B2DD);
-  static const Color secondaryDark = Color(0xFF633F87);
-  static const Color accent = Color(0xFF546CC0);       // signature blue-violet
-  static const Color accentLight = Color(0xFFB2BDE3);
+  // Blue-violet (from the logo's "by Muna" signature gradient) as primary —
+  // gold reads poorly as text/button-label color (weak contrast against
+  // light backgrounds), so it's demoted to secondary where it's only ever
+  // used as a fill behind dark text, never as text/border color itself.
+  // Purple (also from the signature) stays as a minor accent.
+  static const Color primary = Color(0xFF546CC0);      // signature blue-violet
+  static const Color primaryLight = Color(0xFFB2BDE3);
+  static const Color primaryDark = Color(0xFF37467D);
+  static const Color secondary = Color(0xFFFFBD59);    // logo gold
+  static const Color secondaryLight = Color(0xFFFFDBA4);
+  static const Color secondaryDark = Color(0xFFBF8E43);
+  static const Color accent = Color(0xFF8454B4);       // signature purple
+  static const Color accentLight = Color(0xFFC8B2DD);
   // Warmer and more differentiated than the previous near-white pair —
   // background reads as a genuine warm cream rather than off-white, and
   // surface (cards) sits a step lighter than background so cards read as
@@ -23,11 +23,10 @@ class AppColors {
   static const Color background = Color(0xFFF5EEE1);
   static const Color surface = Color(0xFFFFFBF3);
   static const Color surfaceVariant = Color(0xFFEFE1CC);
-  // primary (gold) is light, so its "on" color needs to be dark to stay
-  // readable — a bright saturated color like the old terracotta or the
-  // teal secondary could take white, but gold can't.
-  static const Color onPrimary = Color(0xFF2D2015);
-  static const Color onSecondary = Color(0xFFFFFFFF);
+  // primary (blue-violet) is dark/saturated enough for white text; secondary
+  // (gold) is light, so its "on" color needs to stay dark to be readable.
+  static const Color onPrimary = Color(0xFFFFFFFF);
+  static const Color onSecondary = Color(0xFF2D2015);
   static const Color onBackground = Color(0xFF2D2015);
   static const Color onSurface = Color(0xFF2D2015);
   static const Color textSecondary = Color(0xFF7A6A5A);

@@ -49,7 +49,6 @@ type Recipe
   savedCount: Int
   commentCount: Int
   feedbackCount: Int
-  questionCount: Int
   averageRating: Float
   isSponsored: Boolean
   sponsorId: ID
@@ -97,7 +96,10 @@ input RecipeMediaInput {
   createdAt: AWSDateTime!
 }
 
-type RecipeComment {
+type RecipeComment
+  @aws_cognito_user_pools
+  @aws_iam
+{
   id: ID!
   recipeId: ID!
   authorId: ID!
@@ -127,26 +129,10 @@ type RecipeFeedback {
   updatedAt: AWSDateTime
 }
 
-type RecipeQuestion {
-  id: ID!
-  recipeId: ID!
-  authorId: ID!
-  authorName: String!
-  authorAvatarUrl: AWSURL
-  question: String!
-  isAnsweredByCreator: Boolean
-  creatorAnswer: String
-  answeredAt: AWSDateTime
-  isHidden: Boolean
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime
-}
-
 type RecipeReport {
   id: ID!
   recipeId: ID!
   commentId: ID
-  questionId: ID
   reporterId: ID!
   reason: String!
   details: String
@@ -190,18 +176,16 @@ type RecipeConnection
   nextToken: String
 }
 
-type CommentConnection {
+type CommentConnection
+  @aws_cognito_user_pools
+  @aws_iam
+{
   items: [RecipeComment]
   nextToken: String
 }
 
 type FeedbackConnection {
   items: [RecipeFeedback]
-  nextToken: String
-}
-
-type QuestionConnection {
-  items: [RecipeQuestion]
   nextToken: String
 }
 
@@ -326,6 +310,12 @@ input CreateRecipeCommentInput {
   createdAt: AWSDateTime
 }
 
+input UpdateRecipeCommentInput {
+  id: ID!
+  body: String!
+  updatedAt: AWSDateTime
+}
+
 input DeleteRecipeCommentInput {
   id: ID!
 }
@@ -344,23 +334,6 @@ input CreateRecipeFeedbackInput {
   createdAt: AWSDateTime
 }
 
-input CreateRecipeQuestionInput {
-  id: ID
-  recipeId: ID!
-  authorId: ID!
-  authorName: String!
-  authorAvatarUrl: AWSURL
-  question: String!
-  createdAt: AWSDateTime
-}
-
-input UpdateRecipeQuestionInput {
-  id: ID!
-  isAnsweredByCreator: Boolean
-  creatorAnswer: String
-  answeredAt: AWSDateTime
-}
-
 input CreateSavedRecipeInput {
   id: ID
   userId: ID!
@@ -376,7 +349,6 @@ input CreateRecipeReportInput {
   id: ID
   recipeId: ID!
   commentId: ID
-  questionId: ID
   reporterId: ID!
   reason: String!
   details: String
@@ -437,8 +409,9 @@ type Query {
     @aws_cognito_user_pools
     @aws_iam
   commentsByRecipeId(recipeId: ID!, limit: Int, nextToken: String): CommentConnection
+    @aws_cognito_user_pools
+    @aws_iam
   feedbackByRecipeId(recipeId: ID!, limit: Int, nextToken: String): FeedbackConnection
-  questionsByRecipeId(recipeId: ID!, limit: Int, nextToken: String): QuestionConnection
   savedRecipesByUserId(userId: ID!, limit: Int, nextToken: String): SavedRecipeConnection
 }
 
@@ -449,10 +422,9 @@ type Mutation {
   updateRecipe(input: UpdateRecipeInput!): Recipe
   deleteRecipe(input: DeleteRecipeInput!): Recipe
   createRecipeComment(input: CreateRecipeCommentInput!): RecipeComment
+  updateRecipeComment(input: UpdateRecipeCommentInput!): RecipeComment
   deleteRecipeComment(input: DeleteRecipeCommentInput!): RecipeComment
   createRecipeFeedback(input: CreateRecipeFeedbackInput!): RecipeFeedback
-  createRecipeQuestion(input: CreateRecipeQuestionInput!): RecipeQuestion
-  updateRecipeQuestion(input: UpdateRecipeQuestionInput!): RecipeQuestion
   createSavedRecipe(input: CreateSavedRecipeInput!): SavedRecipe
   deleteSavedRecipe(input: DeleteSavedRecipeInput!): SavedRecipe
   createRecipeReport(input: CreateRecipeReportInput!): RecipeReport
@@ -461,6 +433,4 @@ type Mutation {
 type Subscription {
   onCreateRecipeComment(recipeId: ID!): RecipeComment
     @aws_subscribe(mutations: ["createRecipeComment"])
-  onCreateRecipeQuestion(recipeId: ID!): RecipeQuestion
-    @aws_subscribe(mutations: ["createRecipeQuestion"])
 }

@@ -164,7 +164,6 @@ class Recipe extends Equatable {
   final int savedCount;
   final int commentCount;
   final int feedbackCount;
-  final int questionCount;
   final double? averageRating;
 
   // Monetization placeholders (all null for MVP)
@@ -209,7 +208,6 @@ class Recipe extends Equatable {
     this.savedCount = 0,
     this.commentCount = 0,
     this.feedbackCount = 0,
-    this.questionCount = 0,
     this.averageRating,
     this.isSponsored = false,
     this.sponsorId,
@@ -280,7 +278,6 @@ class Recipe extends Equatable {
         savedCount: (json['savedCount'] as int?) ?? 0,
         commentCount: (json['commentCount'] as int?) ?? 0,
         feedbackCount: (json['feedbackCount'] as int?) ?? 0,
-        questionCount: (json['questionCount'] as int?) ?? 0,
         averageRating: (json['averageRating'] as num?)?.toDouble(),
         isSponsored: (json['isSponsored'] as bool?) ?? false,
         sponsorId: json['sponsorId'] as String?,
@@ -321,7 +318,6 @@ class Recipe extends Equatable {
         'savedCount': savedCount,
         'commentCount': commentCount,
         'feedbackCount': feedbackCount,
-        'questionCount': questionCount,
         'averageRating': averageRating,
         'isSponsored': isSponsored,
         'sponsorId': sponsorId,

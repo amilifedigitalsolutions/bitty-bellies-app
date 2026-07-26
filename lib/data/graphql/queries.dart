@@ -8,7 +8,7 @@ class RecipeQueries {
           id title description creatorId creatorName creatorAvatarUrl
           ageStage texture cuisine cultureRegion mealCategories dietTypes
           allergens prepTimeMinutes cookTimeMinutes servings
-          savedCount commentCount feedbackCount questionCount averageRating
+          savedCount commentCount feedbackCount averageRating
           isSponsored isPremium status publishedAt createdAt updatedAt
           media { id recipeId url s3Key isCover sortOrder type uploadedBy createdAt }
         }
@@ -25,7 +25,7 @@ class RecipeQueries {
         ageStage texture cuisine cultureRegion mealCategories dietTypes
         allergens prepTimeMinutes cookTimeMinutes servings
         chokingHazardNotes safetyNotes storageReheatingNotes creatorNotes
-        tags savedCount commentCount feedbackCount questionCount averageRating
+        tags savedCount commentCount feedbackCount averageRating
         isSponsored isPremium status moderationNote publishedAt createdAt updatedAt
         media { id recipeId url s3Key isCover sortOrder type uploadedBy createdAt }
       }
@@ -69,18 +69,6 @@ class RecipeQueries {
     }
   ''';
 
-  static const getQuestions = r'''
-    query GetQuestions($recipeId: ID!, $limit: Int, $nextToken: String) {
-      questionsByRecipeId(recipeId: $recipeId, limit: $limit, nextToken: $nextToken) {
-        items {
-          id recipeId authorId authorName authorAvatarUrl
-          question isAnsweredByCreator creatorAnswer answeredAt isHidden createdAt updatedAt
-        }
-        nextToken
-      }
-    }
-  ''';
-
   static const getSavedRecipes = r'''
     query GetSavedRecipes($userId: ID!, $limit: Int, $nextToken: String) {
       savedRecipesByUserId(userId: $userId, limit: $limit, nextToken: $nextToken) {
@@ -114,7 +102,7 @@ class RecipeMutations {
         ageStage texture cuisine cultureRegion mealCategories dietTypes
         allergens prepTimeMinutes cookTimeMinutes servings
         chokingHazardNotes safetyNotes storageReheatingNotes creatorNotes
-        tags savedCount commentCount feedbackCount questionCount averageRating
+        tags savedCount commentCount feedbackCount averageRating
         isSponsored isPremium status moderationNote publishedAt createdAt updatedAt
         media { id recipeId url s3Key isCover sortOrder type uploadedBy createdAt }
       }
@@ -129,7 +117,7 @@ class RecipeMutations {
         ageStage texture cuisine cultureRegion mealCategories dietTypes
         allergens prepTimeMinutes cookTimeMinutes servings
         chokingHazardNotes safetyNotes storageReheatingNotes creatorNotes
-        tags savedCount commentCount feedbackCount questionCount averageRating
+        tags savedCount commentCount feedbackCount averageRating
         isSponsored isPremium status moderationNote publishedAt createdAt updatedAt
         media { id recipeId url s3Key isCover sortOrder type uploadedBy createdAt }
       }
@@ -145,7 +133,17 @@ class RecipeMutations {
   static const createComment = r'''
     mutation CreateComment($input: CreateRecipeCommentInput!) {
       createRecipeComment(input: $input) {
-        id recipeId authorId authorName body parentCommentId createdAt
+        id recipeId authorId authorName authorAvatarUrl body
+        parentCommentId isDeleted isHidden likeCount createdAt updatedAt
+      }
+    }
+  ''';
+
+  static const updateComment = r'''
+    mutation UpdateComment($input: UpdateRecipeCommentInput!) {
+      updateRecipeComment(input: $input) {
+        id recipeId authorId authorName authorAvatarUrl body
+        parentCommentId isDeleted isHidden likeCount createdAt updatedAt
       }
     }
   ''';
@@ -160,22 +158,6 @@ class RecipeMutations {
     mutation CreateFeedback($input: CreateRecipeFeedbackInput!) {
       createRecipeFeedback(input: $input) {
         id recipeId authorId rating triedIt createdAt
-      }
-    }
-  ''';
-
-  static const createQuestion = r'''
-    mutation CreateQuestion($input: CreateRecipeQuestionInput!) {
-      createRecipeQuestion(input: $input) {
-        id recipeId authorId authorName question createdAt
-      }
-    }
-  ''';
-
-  static const answerQuestion = r'''
-    mutation AnswerQuestion($input: UpdateRecipeQuestionInput!) {
-      updateRecipeQuestion(input: $input) {
-        id isAnsweredByCreator creatorAnswer answeredAt
       }
     }
   ''';
