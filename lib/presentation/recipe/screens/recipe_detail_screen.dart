@@ -147,7 +147,7 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
                     spacing: 6,
                     runSpacing: 4,
                     children: [
-                      _Tag(recipe.ageStage, color: AppColors.secondaryLight),
+                      _Tag(recipe.ageStage, color: AppColors.primaryLight),
                       _Tag(recipe.texture, color: AppColors.surfaceVariant),
                       _Tag(recipe.cuisine, color: AppColors.surfaceVariant),
                       ...recipe.mealCategories.map((c) => _Tag(c, color: AppColors.surfaceVariant)),
@@ -211,7 +211,7 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
                     const SizedBox(height: 6),
                     _SafetyBanner(
                       icon: Icons.info_outline,
-                      color: AppColors.secondaryLight.withValues(alpha: 0.3),
+                      color: AppColors.accentLight.withValues(alpha: 0.3),
                       label: recipe.safetyNotes!,
                     ),
                   ],
@@ -228,7 +228,7 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
-                      children: recipe.dietTypes.map((d) => _Tag(d, color: AppColors.secondaryLight.withValues(alpha: 0.4))).toList(),
+                      children: recipe.dietTypes.map((d) => _Tag(d, color: AppColors.accentLight.withValues(alpha: 0.4))).toList(),
                     ),
                   ],
                 ],
