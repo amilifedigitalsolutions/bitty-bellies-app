@@ -23,7 +23,16 @@ class RouterNotifier extends ChangeNotifier {
   final Ref _ref;
 
   RouterNotifier(this._ref) {
-    _ref.listen(currentUserProvider, (_, __) => notifyListeners());
+    // redirect() below only cares about the loading→loaded transition (to
+    // gate the splash screen) — notifying on every profile data change
+    // (adding a child, editing bio, saved-count updates, ...) forced a
+    // GoRouter rebuild with no actual redirect effect, and if that landed
+    // in the same frame as another Navigator mutation (a bottom sheet
+    // popping, a Hero transition) it could trip GoRouter's
+    // duplicate-page-key assertion and crash the app.
+    _ref.listen(currentUserProvider, (previous, next) {
+      if (previous?.isLoading != next.isLoading) notifyListeners();
+    });
   }
 
   String? redirect(BuildContext context, GoRouterState state) {
