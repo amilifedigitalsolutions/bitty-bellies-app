@@ -16,6 +16,53 @@ type UserProfile {
   isActive: Boolean
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime
+  children: [Child]
+}
+
+type Child {
+  id: ID!
+  name: String!
+  birthdate: AWSDate!
+  createdAt: AWSDateTime
+}
+
+input ChildInput {
+  id: ID!
+  name: String!
+  birthdate: AWSDate!
+  createdAt: AWSDateTime
+}
+
+enum RecipeFolder {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACKS
+}
+
+type ChildRecipeFolderEntry {
+  childId: ID!
+  folder: RecipeFolder!
+  recipeId: ID!
+  createdAt: AWSDateTime!
+}
+
+type ChildRecipeFolderConnection {
+  items: [ChildRecipeFolderEntry]
+  nextToken: String
+}
+
+input CreateChildRecipeFolderInput {
+  childId: ID!
+  folder: RecipeFolder!
+  recipeId: ID!
+  createdAt: AWSDateTime
+}
+
+input DeleteChildRecipeFolderInput {
+  childId: ID!
+  folder: RecipeFolder!
+  recipeId: ID!
 }
 
 type Recipe
@@ -205,6 +252,7 @@ input CreateUserProfileInput {
   culturalBackground: String
   cookingStyle: String
   createdAt: AWSDateTime
+  children: [ChildInput]
 }
 
 input UpdateUserProfileInput {
@@ -217,6 +265,7 @@ input UpdateUserProfileInput {
   culturalBackground: String
   cookingStyle: String
   updatedAt: AWSDateTime
+  children: [ChildInput]
 }
 
 input CreateRecipeInput {
@@ -413,6 +462,10 @@ type Query {
     @aws_iam
   feedbackByRecipeId(recipeId: ID!, limit: Int, nextToken: String): FeedbackConnection
   savedRecipesByUserId(userId: ID!, limit: Int, nextToken: String): SavedRecipeConnection
+  # No @aws_iam here — unlike recipe/comment reads, children and their
+  # folders are private to the signed-in parent, not guest-readable, so
+  # this intentionally stays on the default Cognito User Pools auth mode.
+  childRecipeFoldersByChild(childId: ID!, limit: Int, nextToken: String): ChildRecipeFolderConnection
 }
 
 type Mutation {
@@ -428,6 +481,8 @@ type Mutation {
   createSavedRecipe(input: CreateSavedRecipeInput!): SavedRecipe
   deleteSavedRecipe(input: DeleteSavedRecipeInput!): SavedRecipe
   createRecipeReport(input: CreateRecipeReportInput!): RecipeReport
+  createChildRecipeFolder(input: CreateChildRecipeFolderInput!): ChildRecipeFolderEntry
+  deleteChildRecipeFolder(input: DeleteChildRecipeFolderInput!): ChildRecipeFolderEntry
 }
 
 type Subscription {

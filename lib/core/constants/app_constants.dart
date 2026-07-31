@@ -66,6 +66,15 @@ class AppConstants {
     'Drink',
   ];
 
+  // Fixed set of per-child recipe folders (4.4) — display labels; the API
+  // stores these upper-cased to match the RecipeFolder GraphQL enum.
+  static const List<String> recipeFolders = [
+    'Breakfast',
+    'Lunch',
+    'Dinner',
+    'Snacks',
+  ];
+
   // Diet types
   static const List<String> dietTypes = [
     'Vegetarian',

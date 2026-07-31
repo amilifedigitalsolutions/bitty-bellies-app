@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/errors/app_error.dart';
 import '../../core/utils/result.dart';
+import '../../domain/models/child_folder_entry.dart';
 import '../../domain/models/recipe.dart';
 import '../../domain/models/recipe_comment.dart';
 import '../../domain/models/recipe_filter.dart';
@@ -473,6 +474,110 @@ class RecipeRepositoryImpl implements RecipeRepository {
     await Future.delayed(const Duration(seconds: 1));
     return const Success(null);
   }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Child recipe folders (4.4)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  @override
+  Future<Result<ChildRecipeFolderEntry>> saveToChildFolder(String childId, String folder, String recipeId) async {
+    try {
+      final createdAt = DateTime.now().toUtc();
+      final request = GraphQLRequest<String>(
+        document: RecipeMutations.createChildRecipeFolder,
+        variables: {
+          'input': {
+            'childId': childId,
+            'folder': folder.toUpperCase(),
+            'recipeId': recipeId,
+            'createdAt': createdAt.toIso8601String(),
+          },
+        },
+      );
+      final response = await Amplify.API.mutate(request: request).response;
+      if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
+      final data = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
+      final created = data['createChildRecipeFolder'] as Map<String, dynamic>;
+
+      // Saving into a child's folder also bookmarks the recipe generally,
+      // so it shows up in the flat Saved Recipes list too — skip if it's
+      // already saved (e.g. from a prior folder save or the heart button).
+      final savedResult = await getSavedRecipes();
+      final alreadySaved = savedResult.when(
+        success: (saved) => saved.any((s) => s.recipeId == recipeId),
+        failure: (_) => false,
+      );
+      if (!alreadySaved) {
+        await saveRecipe(recipeId);
+      }
+
+      return Success(ChildRecipeFolderEntry(
+        childId: created['childId'] as String,
+        folder: _titleCase(created['folder'] as String),
+        recipeId: created['recipeId'] as String,
+        createdAt: DateTime.parse(created['createdAt'] as String),
+      ));
+    } catch (e) {
+      return Failure(UnknownError(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<void>> removeFromChildFolder(String childId, String folder, String recipeId) async {
+    try {
+      final request = GraphQLRequest<String>(
+        document: RecipeMutations.deleteChildRecipeFolder,
+        variables: {
+          'input': {
+            'childId': childId,
+            'folder': folder.toUpperCase(),
+            'recipeId': recipeId,
+          },
+        },
+      );
+      final response = await Amplify.API.mutate(request: request).response;
+      if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
+      return const Success(null);
+    } catch (e) {
+      return Failure(UnknownError(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<List<ChildRecipeFolderEntry>>> getChildFolderEntries(String childId) async {
+    try {
+      final request = GraphQLRequest<String>(
+        document: RecipeQueries.getChildRecipeFolders,
+        variables: {'childId': childId, 'limit': 100},
+      );
+      final response = await Amplify.API.query(request: request).response;
+      if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
+      final data = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
+      final items = (data['childRecipeFoldersByChild']?['items'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
+
+      // Hydrate each bare entry with its Recipe (N+1, same pattern as
+      // getSavedRecipes — folder lists are small so this is fine) and
+      // silently drop entries whose recipe has since been deleted.
+      final entries = await Future.wait(items.map((e) async {
+        final recipeResult = await getRecipeById(e['recipeId'] as String);
+        final recipe = recipeResult.when(success: (r) => r, failure: (_) => null);
+        return ChildRecipeFolderEntry(
+          childId: e['childId'] as String,
+          folder: _titleCase(e['folder'] as String),
+          recipeId: e['recipeId'] as String,
+          recipe: recipe,
+          createdAt: DateTime.parse(e['createdAt'] as String),
+        );
+      }));
+      return Success(entries.where((e) => e.recipe != null).toList());
+    } catch (e) {
+      return Failure(UnknownError(e.toString()));
+    }
+  }
+
+  static String _titleCase(String upper) =>
+      upper.isEmpty ? upper : upper[0] + upper.substring(1).toLowerCase();
 
   // ──────────────────────────────────────────────────────────────────────────
   // Helpers

@@ -1,3 +1,4 @@
+import '../models/child_folder_entry.dart';
 import '../models/recipe.dart';
 import '../models/recipe_comment.dart';
 import '../models/recipe_filter.dart';
@@ -38,4 +39,9 @@ abstract class RecipeRepository {
 
   // Email share
   Future<Result<void>> emailRecipe(String recipeId, String toEmail);
+
+  // Child recipe folders (4.4)
+  Future<Result<ChildRecipeFolderEntry>> saveToChildFolder(String childId, String folder, String recipeId);
+  Future<Result<void>> removeFromChildFolder(String childId, String folder, String recipeId);
+  Future<Result<List<ChildRecipeFolderEntry>>> getChildFolderEntries(String childId);
 }

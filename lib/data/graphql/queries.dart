@@ -80,12 +80,24 @@ class RecipeQueries {
     }
   ''';
 
+  static const getChildRecipeFolders = r'''
+    query GetChildRecipeFolders($childId: ID!, $limit: Int, $nextToken: String) {
+      childRecipeFoldersByChild(childId: $childId, limit: $limit, nextToken: $nextToken) {
+        items {
+          childId folder recipeId createdAt
+        }
+        nextToken
+      }
+    }
+  ''';
+
   static const getUserProfile = r'''
     query GetUserProfile($id: ID!) {
       getUserProfile(id: $id) {
         id displayName email bio avatarUrl country region
         culturalBackground cookingStyle savedRecipesCount uploadedRecipesCount
         isVerifiedCreator isModerator isAdmin isActive createdAt updatedAt
+        children { id name birthdate createdAt }
       }
     }
   ''';
@@ -176,6 +188,20 @@ class RecipeMutations {
     }
   ''';
 
+  static const createChildRecipeFolder = r'''
+    mutation CreateChildRecipeFolder($input: CreateChildRecipeFolderInput!) {
+      createChildRecipeFolder(input: $input) {
+        childId folder recipeId createdAt
+      }
+    }
+  ''';
+
+  static const deleteChildRecipeFolder = r'''
+    mutation DeleteChildRecipeFolder($input: DeleteChildRecipeFolderInput!) {
+      deleteChildRecipeFolder(input: $input) { childId folder recipeId }
+    }
+  ''';
+
   static const createReport = r'''
     mutation CreateReport($input: CreateRecipeReportInput!) {
       createRecipeReport(input: $input) {
@@ -187,7 +213,10 @@ class RecipeMutations {
   static const createUserProfile = r'''
     mutation CreateUserProfile($input: CreateUserProfileInput!) {
       createUserProfile(input: $input) {
-        id displayName email createdAt
+        id displayName email bio avatarUrl country region
+        culturalBackground cookingStyle savedRecipesCount uploadedRecipesCount
+        isVerifiedCreator isModerator isAdmin isActive createdAt updatedAt
+        children { id name birthdate createdAt }
       }
     }
   ''';
@@ -195,7 +224,10 @@ class RecipeMutations {
   static const updateUserProfile = r'''
     mutation UpdateUserProfile($input: UpdateUserProfileInput!) {
       updateUserProfile(input: $input) {
-        id displayName bio avatarUrl country region culturalBackground cookingStyle updatedAt
+        id displayName email bio avatarUrl country region
+        culturalBackground cookingStyle savedRecipesCount uploadedRecipesCount
+        isVerifiedCreator isModerator isAdmin isActive createdAt updatedAt
+        children { id name birthdate createdAt }
       }
     }
   ''';

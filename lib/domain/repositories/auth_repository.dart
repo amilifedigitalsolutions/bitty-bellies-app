@@ -1,3 +1,4 @@
+import '../models/child.dart';
 import '../models/user_profile.dart';
 import '../../core/utils/result.dart';
 
@@ -33,6 +34,11 @@ abstract class AuthRepository {
   Future<Result<UserProfile?>> getCurrentUser();
 
   Future<Result<UserProfile>> updateProfile(UserProfile profile);
+
+  // Children (4.3)
+  Future<Result<UserProfile>> addChild(String name, DateTime birthdate);
+  Future<Result<UserProfile>> updateChild(Child child);
+  Future<Result<UserProfile>> removeChild(String childId);
 
   Stream<AuthState> get authStateChanges;
 

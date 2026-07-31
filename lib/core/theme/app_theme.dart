@@ -37,6 +37,12 @@ class AppColors {
   static const Color allergenTag = Color(0xFFFFE0B2);
   static const Color safetyTag = Color(0xFFFFCDD2);
   static const Color chokingTag = Color(0xFFFF8A65);
+
+  // Flat pastel fills for Wonder-Weeks-style color-blocked sections (stat
+  // pills, folder headers, hero bands) — cycles through the existing brand
+  // tints instead of introducing new hues, so the app still reads as this
+  // app's palette rather than a generic pastel kit.
+  static const List<Color> pastelFills = [primaryLight, secondaryLight, accentLight];
 }
 
 class AppTheme {
@@ -72,47 +78,47 @@ class AppTheme {
           iconTheme: IconThemeData(color: AppColors.onBackground),
           titleTextStyle: TextStyle(
             color: AppColors.onBackground,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
             fontFamily: 'Nunito',
           ),
         ),
+        // Flat, borderless, generously rounded — pastel color-blocking
+        // instead of a bordered white card is the core Wonder-Weeks trait.
         cardTheme: CardThemeData(
           color: AppColors.surface,
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: AppColors.border, width: 1),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: AppColors.surfaceVariant,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.border),
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.border),
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(18),
             borderSide: const BorderSide(color: AppColors.primary, width: 2),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(18),
             borderSide: const BorderSide(color: AppColors.error),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           hintStyle: const TextStyle(color: AppColors.textSecondary),
         ),
+        // Fully-rounded pill buttons (radius = half the button height).
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: AppColors.onPrimary,
             minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
             textStyle: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -126,7 +132,7 @@ class AppTheme {
             foregroundColor: AppColors.primary,
             side: const BorderSide(color: AppColors.primary, width: 1.5),
             minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
             textStyle: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -148,16 +154,34 @@ class AppTheme {
           selectedColor: AppColors.primaryLight,
           labelStyle: const TextStyle(fontSize: 12, fontFamily: 'Nunito', color: AppColors.onBackground),
           secondaryLabelStyle: const TextStyle(fontSize: 12, fontFamily: 'Nunito', color: AppColors.onBackground),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide.none,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         ),
+        // Minimal flat bar with a soft pastel pill behind the active icon,
+        // no shadow — matches the plain outlined-icon bottom nav look.
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          height: 68,
+          indicatorColor: AppColors.primaryLight,
+          indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+                fontSize: 11,
+                fontFamily: 'Nunito',
+                fontWeight: states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
+                color: states.contains(WidgetState.selected) ? AppColors.onBackground : AppColors.textSecondary,
+              )),
+          iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+                color: states.contains(WidgetState.selected) ? AppColors.primaryDark : AppColors.textSecondary,
+              )),
+        ),
         textTheme: const TextTheme(
-          displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: AppColors.onBackground),
-          displayMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.onBackground),
-          headlineLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.onBackground),
-          headlineMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.onBackground),
-          headlineSmall: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.onBackground),
+          displayLarge: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: AppColors.onBackground),
+          displayMedium: TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: AppColors.onBackground),
+          headlineLarge: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.onBackground),
+          headlineMedium: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.onBackground),
+          headlineSmall: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.onBackground),
           titleLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.onBackground),
           titleMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onBackground),
           titleSmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),

@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/repositories/auth_repository_impl.dart';
 import '../../../domain/models/user_profile.dart';
 import '../../../domain/repositories/auth_repository.dart';
+import '../../home/providers/recipe_provider.dart';
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) => AuthRepositoryImpl());
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => AuthRepositoryImpl(recipeRepository: ref.read(recipeRepositoryProvider)),
+);
 
 // Current signed-in user — null means guest
 final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, AsyncValue<UserProfile?>>(

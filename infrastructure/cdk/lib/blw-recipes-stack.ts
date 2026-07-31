@@ -232,6 +232,18 @@ export class BlwRecipesStack extends cdk.Stack {
       sortKey: { name: 'savedAt', type: dynamodb.AttributeType.STRING },
     });
 
+    // childId + "FOLDER#recipeId" as a composite sort key — unlike
+    // SavedRecipesTable's synthetic id (which needs a list-then-find before
+    // every delete), this lets both per-child and per-folder queries
+    // (via begins_with) and deletes address the item directly, no lookup.
+    const childFoldersTable = new dynamodb.Table(this, 'ChildFoldersTable', {
+      tableName: 'blw-child-folders',
+      partitionKey: { name: 'childId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'folderKey', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     // Monetization placeholder table (empty for MVP)
     const monetizationTable = new dynamodb.Table(this, 'MonetizationTable', {
       tableName: 'blw-monetization-placements',
@@ -270,6 +282,7 @@ export class BlwRecipesStack extends cdk.Stack {
     const feedbackDS = api.addDynamoDbDataSource('FeedbackDS', feedbackTable);
     const reportsDS = api.addDynamoDbDataSource('ReportsDS', reportsTable);
     const savedDS = api.addDynamoDbDataSource('SavedDS', savedRecipesTable);
+    const childFoldersDS = api.addDynamoDbDataSource('ChildFoldersDS', childFoldersTable);
 
     // ──────────────────────────────────────────────────────────────────────
     // AppSync Resolvers
@@ -437,6 +450,35 @@ export class BlwRecipesStack extends cdk.Stack {
 `),
     });
 
+    childFoldersDS.createResolver('ChildRecipeFoldersByChild', {
+      typeName: 'Query',
+      fieldName: 'childRecipeFoldersByChild',
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+{
+  "version": "2017-02-28",
+  "operation": "Query",
+  "query": {
+    "expression": "childId = :childId",
+    "expressionValues": {
+      ":childId": $util.dynamodb.toDynamoDBJson($context.args.childId)
+    }
+  },
+  "limit": $util.defaultIfNull($context.args.limit, 50),
+  #if($context.args.nextToken)
+    "nextToken": "$context.args.nextToken"
+  #end
+}
+`),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+{
+  "items": $util.toJson($context.result.items),
+  #if($context.result.nextToken)
+    "nextToken": "$context.result.nextToken"
+  #end
+}
+`),
+    });
+
     // ── Mutations: UserProfile ──
 
     usersDS.createResolver('CreateUserProfile', {
@@ -461,15 +503,37 @@ export class BlwRecipesStack extends cdk.Stack {
     usersDS.createResolver('UpdateUserProfile', {
       typeName: 'Mutation',
       fieldName: 'updateUserProfile',
+      // Explicit SET expression rather than the $util.dynamodb.toMapValuesJson
+      // shorthand used elsewhere — that shorthand broke specifically once a
+      // nested list-of-objects field (children) was mixed with plain
+      // nullable scalars in the same update ("Unsupported element" error).
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
+#set($input = $util.map.copyAndRemoveAllKeys($context.args.input, ["id"]))
+#set($expNames = {})
+#set($expValues = {})
+#set($setParts = [])
+#foreach($key in $input.keySet())
+  #set($namePlaceholder = "#$key")
+  #set($valuePlaceholder = ":$key")
+  $util.qr($expNames.put($namePlaceholder, $key))
+  $util.qr($expValues.put($valuePlaceholder, $util.dynamodb.toDynamoDB($input[$key])))
+  $util.qr($setParts.add("$namePlaceholder = $valuePlaceholder"))
+#end
+#set($setExpression = "")
+#foreach($part in $setParts)
+  #if($foreach.count > 1)#set($setExpression = "$setExpression, $part")#else#set($setExpression = "$part")#end
+#end
 {
   "version": "2017-02-28",
   "operation": "UpdateItem",
   "key": {
-    "id": $util.dynamodb.toDynamoDBJson($context.args.input.id)
+    "id": $util.dynamodb.toDynamoDBJson($ctx.identity.sub)
   },
-  #set($input = $util.map.copyAndRemoveAllKeys($context.args.input, ["id"]))
-  "update": $util.dynamodb.toMapValuesJson($input)
+  "update": {
+    "expression": "SET $setExpression",
+    "expressionNames": $util.toJson($expNames),
+    "expressionValues": $util.toJson($expValues)
+  }
 }
 `),
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
@@ -661,6 +725,57 @@ export class BlwRecipesStack extends cdk.Stack {
   "operation": "DeleteItem",
   "key": {
     "id": $util.dynamodb.toDynamoDBJson($context.args.input.id)
+  }
+}
+`),
+      responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
+    });
+
+    // ── Mutations: Child Recipe Folders ──
+
+    childFoldersDS.createResolver('CreateChildRecipeFolder', {
+      typeName: 'Mutation',
+      fieldName: 'createChildRecipeFolder',
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+#set($folderKey = "$context.args.input.folder#$context.args.input.recipeId")
+#set($values = $context.args.input)
+$util.qr($values.put("parentId", $ctx.identity.sub))
+#if(!$values.createdAt)
+  $util.qr($values.put("createdAt", $util.time.nowISO8601()))
+#end
+{
+  "version": "2017-02-28",
+  "operation": "PutItem",
+  "key": {
+    "childId": $util.dynamodb.toDynamoDBJson($context.args.input.childId),
+    "folderKey": $util.dynamodb.toDynamoDBJson($folderKey)
+  },
+  "attributeValues": $util.dynamodb.toMapValuesJson($values),
+  "condition": {
+    "expression": "attribute_not_exists(folderKey)"
+  }
+}
+`),
+      responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
+    });
+
+    childFoldersDS.createResolver('DeleteChildRecipeFolder', {
+      typeName: 'Mutation',
+      fieldName: 'deleteChildRecipeFolder',
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+#set($folderKey = "$context.args.input.folder#$context.args.input.recipeId")
+{
+  "version": "2017-02-28",
+  "operation": "DeleteItem",
+  "key": {
+    "childId": $util.dynamodb.toDynamoDBJson($context.args.input.childId),
+    "folderKey": $util.dynamodb.toDynamoDBJson($folderKey)
+  },
+  "condition": {
+    "expression": "parentId = :parentId",
+    "expressionValues": {
+      ":parentId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub)
+    }
   }
 }
 `),

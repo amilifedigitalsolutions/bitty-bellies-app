@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../domain/models/child.dart';
 import '../../../domain/models/recipe.dart';
 import '../../../domain/models/recipe_comment.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -51,6 +52,7 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
   }
 
   bool _savingInFlight = false;
+  bool _savingToFolderInFlight = false;
 
   Future<void> _save() async {
     final user = ref.read(currentUserProvider).valueOrNull;
@@ -101,6 +103,41 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
     await _showReportDialog(context, ref, widget.recipe.id);
   }
 
+  Future<void> _saveToFolder() async {
+    // Guards against a rapid double-tap firing two showDialog/showModalBottomSheet
+    // calls at once, which was crashing the Navigator with a duplicate page-key
+    // assertion — same debounce pattern already used by _save().
+    if (_savingToFolderInFlight) return;
+    final user = ref.read(currentUserProvider).valueOrNull;
+    if (user == null) { context.push('/login'); return; }
+    setState(() => _savingToFolderInFlight = true);
+    try {
+      if (user.children.isEmpty) {
+        final goAdd = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Add a child first'),
+            content: const Text('Add a child from the Saved tab on your profile before saving recipes into their folders.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Go to profile')),
+            ],
+          ),
+        );
+        if (goAdd == true && mounted) context.push('/profile');
+        return;
+      }
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (_) => _SaveToFolderSheet(recipeId: widget.recipe.id, children: user.children),
+      );
+    } finally {
+      if (mounted) setState(() => _savingToFolderInFlight = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final recipe = widget.recipe;
@@ -132,6 +169,11 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
                 color: Colors.white,
               ),
               IconButton(icon: const Icon(Icons.share, color: Colors.white), onPressed: _share),
+              IconButton(
+                icon: const Icon(Icons.create_new_folder_outlined, color: Colors.white),
+                tooltip: "Save to child's folder",
+                onPressed: _savingToFolderInFlight ? null : _saveToFolder,
+              ),
               IconButton(icon: const Icon(Icons.flag_outlined, color: Colors.white), onPressed: _report),
             ],
           ),
@@ -808,4 +850,87 @@ Future<void> _showReportDialog(BuildContext context, WidgetRef ref, String recip
       ),
     ),
   );
+}
+
+// Two-step "pick a child, then pick a folder" sheet for saving a recipe
+// into one of a child's four fixed folders (4.4).
+class _SaveToFolderSheet extends ConsumerStatefulWidget {
+  final String recipeId;
+  final List<Child> children;
+  const _SaveToFolderSheet({required this.recipeId, required this.children});
+
+  @override
+  ConsumerState<_SaveToFolderSheet> createState() => _SaveToFolderSheetState();
+}
+
+class _SaveToFolderSheetState extends ConsumerState<_SaveToFolderSheet> {
+  Child? _selectedChild;
+  bool _saving = false;
+
+  Future<void> _save(String folder) async {
+    final child = _selectedChild;
+    if (child == null) return;
+    setState(() => _saving = true);
+    final result = await ref.read(recipeRepositoryProvider).saveToChildFolder(child.id, folder, widget.recipeId);
+    if (!mounted) return;
+    result.when(
+      success: (_) {
+        ref.invalidate(childFolderEntriesProvider(child.id));
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Saved to ${child.name}\'s $folder folder.')),
+        );
+      },
+      failure: (e) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save: ${e.message}'), backgroundColor: AppColors.error),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_selectedChild == null) ...[
+            Text('Save to which child?', style: Theme.of(context).textTheme.headlineMedium),
+            const SizedBox(height: 16),
+            ...widget.children.map((c) => ListTile(
+                  leading: const CircleAvatar(backgroundColor: AppColors.primaryLight, child: Icon(Icons.child_care)),
+                  title: Text(c.name),
+                  subtitle: Text(c.ageLabel),
+                  onTap: () => setState(() => _selectedChild = c),
+                )),
+          ] else ...[
+            Row(
+              children: [
+                IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => setState(() => _selectedChild = null)),
+                Expanded(
+                  child: Text('Save to which folder?', style: Theme.of(context).textTheme.headlineMedium),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (_saving)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else
+              ...AppConstants.recipeFolders.map((folder) => ListTile(
+                    leading: const Icon(Icons.folder_outlined, color: AppColors.primary),
+                    title: Text(folder),
+                    onTap: () => _save(folder),
+                  )),
+          ],
+        ],
+      ),
+    );
+  }
 }

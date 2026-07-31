@@ -76,3 +76,11 @@ final recipeFeedbackProvider = FutureProvider.autoDispose.family((ref, String re
   final result = await repo.getFeedback(recipeId);
   return result.when(success: (f) => f, failure: (e) => throw e);
 });
+
+// A child's saved-recipe folder entries — UI groups the flat list into the
+// 4 fixed folders (AppConstants.recipeFolders) client-side.
+final childFolderEntriesProvider = FutureProvider.autoDispose.family((ref, String childId) async {
+  final repo = ref.read(recipeRepositoryProvider);
+  final result = await repo.getChildFolderEntries(childId);
+  return result.when(success: (e) => e, failure: (e) => throw e);
+});

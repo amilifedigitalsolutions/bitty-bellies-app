@@ -2,14 +2,22 @@ import 'dart:convert';
 
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_flutter/amplify_flutter.dart' hide UserProfile;
+import 'package:uuid/uuid.dart';
 
 import '../../core/errors/app_error.dart';
 import '../../core/utils/result.dart';
+import '../../domain/models/child.dart';
 import '../../domain/models/user_profile.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/repositories/recipe_repository.dart';
 import '../graphql/queries.dart';
+import 'recipe_repository_impl.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
+  final RecipeRepository _recipeRepository;
+  AuthRepositoryImpl({RecipeRepository? recipeRepository})
+      : _recipeRepository = recipeRepository ?? RecipeRepositoryImpl();
+
   @override
   Future<Result<UserProfile>> signUp({
     required String email,
@@ -170,10 +178,84 @@ class AuthRepositoryImpl implements AuthRepository {
         userAttributeKey: CognitoUserAttributeKey.name,
         value: profile.displayName,
       );
-      return Success(profile);
+      // This used to stop here and just echo the input back — bio/avatarUrl/
+      // country/region/culturalBackground/cookingStyle/children never
+      // actually persisted to AppSync. Cognito only owns displayName; the
+      // rest of the profile has to go through updateUserProfile.
+      final request = GraphQLRequest<String>(
+        document: RecipeMutations.updateUserProfile,
+        variables: {
+          'input': {
+            'id': profile.id,
+            'displayName': profile.displayName,
+            'bio': profile.bio,
+            'avatarUrl': profile.avatarUrl,
+            'country': profile.country,
+            'region': profile.region,
+            'culturalBackground': profile.culturalBackground,
+            'cookingStyle': profile.cookingStyle,
+            'updatedAt': DateTime.now().toUtc().toIso8601String(),
+            'children': profile.children.map((c) => c.toJson()).toList(),
+          },
+        },
+      );
+      final response = await Amplify.API.mutate(request: request).response;
+      if (response.errors.isNotEmpty) return Failure(ServerError(response.errors.first.message));
+      final data = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
+      return Success(UserProfile.fromJson(data['updateUserProfile'] as Map<String, dynamic>));
     } catch (e) {
       return Failure(UnknownError(e.toString()));
     }
+  }
+
+  @override
+  Future<Result<UserProfile>> addChild(String name, DateTime birthdate) async {
+    final currentResult = await getCurrentUser();
+    return currentResult.when(
+      success: (profile) async {
+        if (profile == null) return const Failure(AuthError('Not signed in.'));
+        final child = Child(id: const Uuid().v4(), name: name, birthdate: birthdate, createdAt: DateTime.now().toUtc());
+        return updateProfile(profile.copyWith(children: [...profile.children, child]));
+      },
+      failure: (e) async => Failure(e),
+    );
+  }
+
+  @override
+  Future<Result<UserProfile>> updateChild(Child updated) async {
+    final currentResult = await getCurrentUser();
+    return currentResult.when(
+      success: (profile) async {
+        if (profile == null) return const Failure(AuthError('Not signed in.'));
+        final children = profile.children.map((c) => c.id == updated.id ? updated : c).toList();
+        return updateProfile(profile.copyWith(children: children));
+      },
+      failure: (e) async => Failure(e),
+    );
+  }
+
+  @override
+  Future<Result<UserProfile>> removeChild(String childId) async {
+    final currentResult = await getCurrentUser();
+    return currentResult.when(
+      success: (profile) async {
+        if (profile == null) return const Failure(AuthError('Not signed in.'));
+        // Delete the child's folder entries first so removing them from the
+        // profile never leaves orphaned rows in ChildFoldersTable.
+        final foldersResult = await _recipeRepository.getChildFolderEntries(childId);
+        await foldersResult.when(
+          success: (entries) async {
+            for (final entry in entries) {
+              await _recipeRepository.removeFromChildFolder(childId, entry.folder, entry.recipeId);
+            }
+          },
+          failure: (_) async {},
+        );
+        final children = profile.children.where((c) => c.id != childId).toList();
+        return updateProfile(profile.copyWith(children: children));
+      },
+      failure: (e) async => Failure(e),
+    );
   }
 
   @override

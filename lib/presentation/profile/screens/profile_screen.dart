@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/stat_pill.dart';
 import '../../../domain/models/recipe.dart';
 import '../../../domain/models/user_profile.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -140,8 +141,24 @@ class _AuthenticatedProfileState extends ConsumerState<_AuthenticatedProfile>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _Stat('Recipes', '${user.uploadedRecipesCount}'),
-                      _Stat('Saved', '${user.savedRecipesCount}'),
+                      StatPill(
+                        icon: Icons.restaurant_menu_outlined,
+                        value: '${user.uploadedRecipesCount}',
+                        label: 'Recipes',
+                        fill: AppColors.primaryLight,
+                      ),
+                      StatPill(
+                        icon: Icons.bookmark_outline,
+                        value: '${user.savedRecipesCount}',
+                        label: 'Saved',
+                        fill: AppColors.secondaryLight,
+                      ),
+                      StatPill(
+                        icon: Icons.child_care_outlined,
+                        value: '${user.children.length}',
+                        label: 'Children',
+                        fill: AppColors.accentLight,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -379,20 +396,6 @@ class _OwnerActions extends ConsumerWidget {
       },
     );
   }
-}
-
-class _Stat extends StatelessWidget {
-  final String label;
-  final String value;
-  const _Stat(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) => Column(
-        children: [
-          Text(value, style: Theme.of(context).textTheme.headlineMedium),
-          Text(label, style: Theme.of(context).textTheme.labelMedium),
-        ],
-      );
 }
 
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {

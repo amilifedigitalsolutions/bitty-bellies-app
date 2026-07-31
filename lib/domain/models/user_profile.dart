@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'child.dart';
 
 class UserProfile extends Equatable {
   final String id;           // Cognito sub / userId
@@ -18,6 +19,7 @@ class UserProfile extends Equatable {
   final bool isActive;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final List<Child> children;
 
   const UserProfile({
     required this.id,
@@ -37,6 +39,7 @@ class UserProfile extends Equatable {
     this.isActive = true,
     required this.createdAt,
     this.updatedAt,
+    this.children = const [],
   });
 
   UserProfile copyWith({
@@ -49,6 +52,7 @@ class UserProfile extends Equatable {
     String? cookingStyle,
     int? savedRecipesCount,
     int? uploadedRecipesCount,
+    List<Child>? children,
   }) {
     return UserProfile(
       id: id,
@@ -68,6 +72,7 @@ class UserProfile extends Equatable {
       isActive: isActive,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
+      children: children ?? this.children,
     );
   }
 
@@ -89,6 +94,10 @@ class UserProfile extends Equatable {
         isActive: (json['isActive'] as bool?) ?? true,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : null,
+        children: (json['children'] as List?)
+                ?.map((c) => Child.fromJson(c as Map<String, dynamic>))
+                .toList() ??
+            const [],
       );
 
   Map<String, dynamic> toJson() => {
@@ -109,6 +118,7 @@ class UserProfile extends Equatable {
         'isActive': isActive,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt?.toIso8601String(),
+        'children': children.map((c) => c.toJson()).toList(),
       };
 
   @override
