@@ -124,7 +124,15 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
             ],
           ),
         );
-        if (goAdd == true && mounted) context.push('/profile');
+        // Pushing immediately after the dialog's own pop chains two
+        // Navigator mutations into the same frame — same class of
+        // duplicate-page-key crash fixed elsewhere. Deferring to the next
+        // frame lets the dialog's pop fully settle first.
+        if (goAdd == true) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) context.push('/profile');
+          });
+        }
         return;
       }
       await showModalBottomSheet(
