@@ -31,7 +31,15 @@ class RouterNotifier extends ChangeNotifier {
     // popping, a Hero transition) it could trip GoRouter's
     // duplicate-page-key assertion and crash the app.
     _ref.listen(currentUserProvider, (previous, next) {
-      if (previous?.isLoading != next.isLoading) notifyListeners();
+      if (previous?.isLoading != next.isLoading) {
+        // The loading->loaded transition fires exactly when the app is
+        // moving off the splash screen — right as the initial frame's
+        // widget tree is still settling. Notifying synchronously there
+        // could overlap with that in-flight build and still trip
+        // GoRouter's duplicate-page-key assertion on startup; deferring to
+        // the next frame avoids the overlap.
+        WidgetsBinding.instance.addPostFrameCallback((_) => notifyListeners());
+      }
     });
   }
 
