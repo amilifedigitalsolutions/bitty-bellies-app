@@ -21,16 +21,20 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     routes: [
-      // Shell with bottom nav
-      ShellRoute(
-        builder: (context, state, child) => AppShell(child: child),
-        routes: [
-          GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
-          GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
-          GoRoute(
-            path: '/profile',
-            builder: (_, __) => const ProfileScreen(),
-          ),
+      // Shell with bottom nav. StatefulShellRoute.indexedStack keeps each
+      // tab's own persistent Navigator alive in an IndexedStack instead of
+      // page-transitioning between shell and non-shell routes — plain
+      // ShellRoute hit a long-standing, still-open upstream go_router bug
+      // (flutter/flutter #107010, #107045, #122507, #140586, #156585)
+      // where navigating in and out of the shell could produce a Navigator
+      // page with a duplicate key. The branch-based model here sidesteps
+      // that mechanism entirely rather than working around its timing.
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(routes: [GoRoute(path: '/', builder: (_, __) => const HomeScreen())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/search', builder: (_, __) => const SearchScreen())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen())]),
         ],
       ),
 
@@ -78,41 +82,32 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 class AppShell extends ConsumerWidget {
-  final Widget child;
-  const AppShell({super.key, required this.child});
+  final StatefulNavigationShell navigationShell;
+  const AppShell({super.key, required this.navigationShell});
 
   static const _tabs = [
-    (icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Home', path: '/'),
-    (icon: Icons.search_outlined, activeIcon: Icons.search, label: 'Search', path: '/search'),
-    (icon: Icons.person_outline, activeIcon: Icons.person, label: 'Profile', path: '/profile'),
+    (icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Home'),
+    (icon: Icons.search_outlined, activeIcon: Icons.search, label: 'Search'),
+    (icon: Icons.person_outline, activeIcon: Icons.person, label: 'Profile'),
   ];
-
-  int _currentIndex(BuildContext context) {
-    final location = GoRouterState.of(context).uri.path;
-    for (var i = 0; i < _tabs.length; i++) {
-      if (location.startsWith(_tabs[i].path) && (_tabs[i].path != '/' || location == '/')) {
-        return i;
-      }
-    }
-    return 0;
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Shown in place instead of routing to a separate /splash page — a real
-    // Navigator page transition here (splash page -> home page) was the
-    // root cause of a recurring "duplicate page key" crash on cold start;
-    // showing it as plain conditional content sidesteps that mechanism
-    // entirely rather than trying to time around it.
+    // Navigator page transition here (splash page -> home page) was one of
+    // several contributors to the duplicate-page-key crash; showing it as
+    // plain conditional content sidesteps that mechanism entirely.
     final authState = ref.watch(currentUserProvider);
     if (authState.isLoading) return const SplashScreen();
 
-    final idx = _currentIndex(context);
     return Scaffold(
-      body: child,
+      body: navigationShell,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: idx,
-        onDestinationSelected: (i) => context.go(_tabs[i].path),
+        selectedIndex: navigationShell.currentIndex,
+        onDestinationSelected: (i) => navigationShell.goBranch(
+          i,
+          initialLocation: i == navigationShell.currentIndex,
+        ),
         destinations: _tabs
             .map((t) => NavigationDestination(
                   icon: Icon(t.icon),
