@@ -12,6 +12,7 @@ import '../../../domain/models/recipe.dart';
 import '../../../domain/models/recipe_comment.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../home/providers/recipe_provider.dart';
+import '../../profile/screens/saved_recipes_screen.dart';
 
 class RecipeDetailScreen extends ConsumerWidget {
   final String recipeId;
@@ -112,34 +113,41 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
     if (user == null) { context.push('/login'); return; }
     setState(() => _savingToFolderInFlight = true);
     try {
-      if (user.children.isEmpty) {
-        final goAdd = await showDialog<bool>(
+      var children = user.children;
+      if (children.isEmpty) {
+        final wantsToAdd = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: const Text('Add a child first'),
-            content: const Text('Add a child from the Saved tab on your profile before saving recipes into their folders.'),
+            content: const Text("You don't have any children added yet. Add one now to save recipes into their folders."),
             actions: [
               TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
-              TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Go to profile')),
+              TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Add child')),
             ],
           ),
         );
-        // Pushing immediately after the dialog's own pop chains two
-        // Navigator mutations into the same frame — same class of
-        // duplicate-page-key crash fixed elsewhere. Deferring to the next
-        // frame lets the dialog's pop fully settle first.
-        if (goAdd == true) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) context.push('/profile');
-          });
-        }
-        return;
+        if (wantsToAdd != true || !mounted) return;
+
+        // Let them add a child right here instead of bouncing them out to
+        // the profile screen — showModalBottomSheet uses the Navigator's
+        // imperative push/pop stack, not GoRouter's declarative page list,
+        // so it doesn't share the duplicate-page-key issue context.push did.
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          builder: (_) => const AddEditChildSheet(),
+        );
+        if (!mounted) return;
+        children = ref.read(currentUserProvider).valueOrNull?.children ?? const [];
+        if (children.isEmpty) return; // cancelled out of adding a child
       }
+      if (!mounted) return;
       await showModalBottomSheet(
         context: context,
         isScrollControlled: true,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-        builder: (_) => _SaveToFolderSheet(recipeId: widget.recipe.id, children: user.children),
+        builder: (_) => _SaveToFolderSheet(recipeId: widget.recipe.id, children: children),
       );
     } finally {
       if (mounted) setState(() => _savingToFolderInFlight = false);

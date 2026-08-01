@@ -103,7 +103,7 @@ void _showAddOrEditChild(BuildContext context, WidgetRef ref, {Child? existing})
     context: context,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (_) => _AddEditChildSheet(existing: existing),
+    builder: (_) => AddEditChildSheet(existing: existing),
   );
 }
 
@@ -297,15 +297,17 @@ class _MealTypeFoldersSection extends StatelessWidget {
   }
 }
 
-class _AddEditChildSheet extends ConsumerStatefulWidget {
+// Public so it can also be opened directly from the recipe detail screen's
+// "save to child's folder" flow when the signed-in user has no children yet.
+class AddEditChildSheet extends ConsumerStatefulWidget {
   final Child? existing;
-  const _AddEditChildSheet({this.existing});
+  const AddEditChildSheet({super.key, this.existing});
 
   @override
-  ConsumerState<_AddEditChildSheet> createState() => _AddEditChildSheetState();
+  ConsumerState<AddEditChildSheet> createState() => _AddEditChildSheetState();
 }
 
-class _AddEditChildSheetState extends ConsumerState<_AddEditChildSheet> {
+class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
   late final TextEditingController _nameCtrl;
   DateTime? _birthdate;
   bool _saving = false;
