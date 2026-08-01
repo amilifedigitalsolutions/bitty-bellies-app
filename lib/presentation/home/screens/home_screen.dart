@@ -97,20 +97,21 @@ class HomeScreen extends ConsumerWidget {
 
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-          // Safety disclaimer banner
+          // Safety disclaimer banner — flat pastel block, no border, matching
+          // the app-wide Wonder-Weeks-style color-blocking rather than a
+          // bordered "alert" look.
           SliverToBoxAdapter(
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.primaryLight.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.child_care, color: AppColors.primary, size: 20),
-                  const SizedBox(width: 10),
+                  const Icon(Icons.child_care, color: AppColors.primaryDark, size: 22),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Always supervise feeding. These recipes come from parents like you — not medical advice.',

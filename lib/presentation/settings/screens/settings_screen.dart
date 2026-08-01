@@ -58,12 +58,15 @@ class SettingsScreen extends ConsumerWidget {
           ]),
           // Monetization placeholder — no UI yet
           // Section('Premium features') — future
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 }
 
+// Grouped into a single rounded card per section (Wonder-Weeks-style
+// card-blocking) instead of a flat list of rows separated by dividers.
 class _Section extends StatelessWidget {
   final String title;
   final List<Widget> tiles;
@@ -71,16 +74,28 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-          child: Text(title.toUpperCase(), style: Theme.of(context).textTheme.labelMedium),
-        ),
-        ...tiles,
-        const Divider(height: 1),
-      ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            child: Text(title.toUpperCase(), style: Theme.of(context).textTheme.labelMedium),
+          ),
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (var i = 0; i < tiles.length; i++) ...[
+                  tiles[i],
+                  if (i != tiles.length - 1) const Divider(height: 1, indent: 56),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

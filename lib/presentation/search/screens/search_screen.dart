@@ -130,7 +130,10 @@ class _FilterPanel extends ConsumerWidget {
     final cuisines = ref.watch(availableCuisinesProvider).valueOrNull ?? const [];
 
     return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

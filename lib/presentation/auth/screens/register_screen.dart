@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/auth_header_icon.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -96,6 +97,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 32),
+                const AuthHeaderIcon(Icons.person_add_alt_outlined),
+                const SizedBox(height: 16),
                 Text('Create account', style: Theme.of(context).textTheme.displayMedium),
                 const SizedBox(height: 8),
                 Text('Join a global community of parents.', style: Theme.of(context).textTheme.bodyLarge),
@@ -161,10 +164,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 if (_errorMessage != null) ...[
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: Text(_errorMessage!, style: const TextStyle(color: AppColors.error)),
                   ),

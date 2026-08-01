@@ -348,11 +348,19 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
         key: _formKey,
         child: Column(
           children: [
-            // Progress bar
-            LinearProgressIndicator(
-              value: (_currentPage + 1) / _totalPages,
-              backgroundColor: AppColors.border,
-              color: AppColors.primary,
+            // Progress bar — rounded pill instead of the default flat bar,
+            // matching the rounded language used everywhere else.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: (_currentPage + 1) / _totalPages,
+                  backgroundColor: AppColors.surfaceVariant,
+                  color: AppColors.primary,
+                  minHeight: 6,
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

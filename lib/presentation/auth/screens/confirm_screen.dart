@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/auth_header_icon.dart';
 import '../providers/auth_provider.dart';
 
 class ConfirmScreen extends ConsumerStatefulWidget {
@@ -59,6 +61,8 @@ class _ConfirmScreenState extends ConsumerState<ConfirmScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 32),
+                const AuthHeaderIcon(Icons.mark_email_read_outlined),
+                const SizedBox(height: 16),
                 Text('Check your email', style: Theme.of(context).textTheme.displayMedium),
                 const SizedBox(height: 8),
                 Text('We sent a confirmation code to ${widget.email}.', style: Theme.of(context).textTheme.bodyLarge),
@@ -75,9 +79,9 @@ class _ConfirmScreenState extends ConsumerState<ConfirmScreen> {
                 const SizedBox(height: 24),
 
                 if (_errorMessage != null)
-                  Text(_errorMessage!, style: const TextStyle(color: Color(0xFFD32F2F))),
+                  Text(_errorMessage!, style: const TextStyle(color: AppColors.error)),
                 if (_successMessage != null)
-                  Text(_successMessage!, style: const TextStyle(color: Color(0xFF388E3C))),
+                  Text(_successMessage!, style: const TextStyle(color: AppColors.success)),
 
                 const SizedBox(height: 16),
                 ElevatedButton(
