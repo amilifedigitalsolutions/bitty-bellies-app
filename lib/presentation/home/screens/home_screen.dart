@@ -10,25 +10,116 @@ import '../../auth/providers/auth_provider.dart';
 import '../../recipe/widgets/recipe_card.dart';
 import '../providers/recipe_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final _headerKey = GlobalKey();
+  // Fixed header stays put while the list scrolls underneath it, so the
+  // scroll view needs a top spacer matching the header's real rendered
+  // height (it varies with the greeting line, filter chip count, etc.) —
+  // measured after the first frame rather than hardcoded.
+  double _headerHeight = 340;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeader());
+  }
+
+  void _measureHeader() {
+    final height = _headerKey.currentContext?.size?.height;
+    if (height != null && height != _headerHeight && mounted) {
+      setState(() => _headerHeight = height);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider).valueOrNull;
     final recipesAsync = ref.watch(recipeListProvider);
     final filter = ref.watch(recipeFilterProvider);
+
+    // Re-measure whenever content that can change the header's height
+    // changes (greeting appearing/disappearing, Clear button, filters).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeader());
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // Curved gradient header — spans from the very top of the screen
-          // down through the logo, meal-type chips, and safety banner,
-          // ending in a soft downward curve just below the section title.
-          // Uses the light pastel pair (not the fully-saturated brand
-          // colors) so the logo and dark title text underneath stay legible
-          // without needing to flip everything to white text.
-          SliverToBoxAdapter(
+      body: Stack(
+        children: [
+          // Recipe list — sits behind the header in the stack, so once a
+          // card scrolls up past the header's height it's covered by the
+          // (opaque) header drawn on top, i.e. scrolls "under" it.
+          CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(child: SizedBox(height: _headerHeight)),
+              const SliverToBoxAdapter(child: SizedBox(height: 8)),
+
+              recipesAsync.when(
+                data: (recipes) {
+                  if (recipes.isEmpty) {
+                    return const SliverFillRemaining(
+                      child: EmptyView(
+                        message: 'No recipes found',
+                        subMessage: 'Try different filters or check back later.',
+                        icon: Icons.no_food,
+                      ),
+                    );
+                  }
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) => Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: RecipeCard(
+                            recipe: recipes[i],
+                            onTap: () => context.push('/recipe/${recipes[i].id}'),
+                          ),
+                        ),
+                        childCount: recipes.length,
+                      ),
+                    ),
+                  );
+                },
+                loading: () => SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (_, __) => const Padding(
+                        padding: EdgeInsets.only(bottom: 16),
+                        child: RecipeCardSkeleton(),
+                      ),
+                      childCount: 4,
+                    ),
+                  ),
+                ),
+                error: (e, _) => SliverFillRemaining(
+                  child: ErrorView(
+                    message: 'Could not load recipes. Check your connection.',
+                    onRetry: () => ref.invalidate(recipeListProvider),
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            ],
+          ),
+
+          // Curved gradient header — fixed in place while the list above
+          // scrolls underneath it. Uses the light pastel pair (not the
+          // fully-saturated brand colors) so the logo and dark title text
+          // stay legible without needing to flip everything to white text.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
             child: ClipPath(
+              key: _headerKey,
               clipper: const _CurvedHeaderClipper(),
               child: Container(
                 width: double.infinity,
@@ -166,57 +257,6 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 8)),
-
-          // Recipe grid
-          recipesAsync.when(
-            data: (recipes) {
-              if (recipes.isEmpty) {
-                return const SliverFillRemaining(
-                  child: EmptyView(
-                    message: 'No recipes found',
-                    subMessage: 'Try different filters or check back later.',
-                    icon: Icons.no_food,
-                  ),
-                );
-              }
-              return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: RecipeCard(
-                        recipe: recipes[i],
-                        onTap: () => context.push('/recipe/${recipes[i].id}'),
-                      ),
-                    ),
-                    childCount: recipes.length,
-                  ),
-                ),
-              );
-            },
-            loading: () => SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (_, __) => const Padding(
-                    padding: EdgeInsets.only(bottom: 16),
-                    child: RecipeCardSkeleton(),
-                  ),
-                  childCount: 4,
-                ),
-              ),
-            ),
-            error: (e, _) => SliverFillRemaining(
-              child: ErrorView(
-                message: 'Could not load recipes. Check your connection.',
-                onRetry: () => ref.invalidate(recipeListProvider),
-              ),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
 
