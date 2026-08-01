@@ -17,58 +17,10 @@ import '../../presentation/profile/screens/saved_recipes_screen.dart';
 import '../../presentation/settings/screens/settings_screen.dart';
 import '../../presentation/splash/splash_screen.dart';
 
-// Listens to auth state and notifies GoRouter to re-evaluate redirects.
-// GoRouter is created ONCE; we never recreate it on auth change.
-class RouterNotifier extends ChangeNotifier {
-  final Ref _ref;
-
-  RouterNotifier(this._ref) {
-    // redirect() below only cares about the loading→loaded transition (to
-    // gate the splash screen) — notifying on every profile data change
-    // (adding a child, editing bio, saved-count updates, ...) forced a
-    // GoRouter rebuild with no actual redirect effect, and if that landed
-    // in the same frame as another Navigator mutation (a bottom sheet
-    // popping, a Hero transition) it could trip GoRouter's
-    // duplicate-page-key assertion and crash the app.
-    _ref.listen(currentUserProvider, (previous, next) {
-      if (previous?.isLoading != next.isLoading) {
-        // The loading->loaded transition fires exactly when the app is
-        // moving off the splash screen — right as the initial frame's
-        // widget tree is still settling. Notifying synchronously there
-        // could overlap with that in-flight build and still trip
-        // GoRouter's duplicate-page-key assertion on startup; deferring to
-        // the next frame avoids the overlap.
-        WidgetsBinding.instance.addPostFrameCallback((_) => notifyListeners());
-      }
-    });
-  }
-
-  String? redirect(BuildContext context, GoRouterState state) {
-    final authState = _ref.read(currentUserProvider);
-    final loc = state.matchedLocation;
-
-    if (authState.isLoading) {
-      return loc == '/splash' ? null : '/splash';
-    }
-
-    // Auth has resolved — move past the splash screen
-    if (loc == '/splash') return '/';
-
-    return null;
-  }
-}
-
 final routerProvider = Provider<GoRouter>((ref) {
-  final notifier = RouterNotifier(ref);
-  ref.onDispose(notifier.dispose);
-
   return GoRouter(
-    initialLocation: '/splash',
-    refreshListenable: notifier,
-    redirect: notifier.redirect,
+    initialLocation: '/',
     routes: [
-      GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
-
       // Shell with bottom nav
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),
@@ -147,6 +99,14 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Shown in place instead of routing to a separate /splash page — a real
+    // Navigator page transition here (splash page -> home page) was the
+    // root cause of a recurring "duplicate page key" crash on cold start;
+    // showing it as plain conditional content sidesteps that mechanism
+    // entirely rather than trying to time around it.
+    final authState = ref.watch(currentUserProvider);
+    if (authState.isLoading) return const SplashScreen();
+
     final idx = _currentIndex(context);
     return Scaffold(
       body: child,

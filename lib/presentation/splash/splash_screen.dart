@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 
-// The router redirect (RouterNotifier) handles splash → home transition as soon
-// as auth resolves. This screen is a pure loading UI with no navigation logic.
+// Shown in place by AppShell while auth is resolving — not a routed page,
+// so there's no Navigator transition involved. Pure loading UI, no
+// navigation logic.
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
