@@ -134,9 +134,14 @@ class HomeScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text('Recipes parents like you are sharing', style: Theme.of(context).textTheme.headlineSmall),
-                  const Spacer(),
+                  // Expanded so the title wraps within its own space
+                  // instead of crowding (or overflowing past) the Clear
+                  // button once multiple filters are active and it shows up.
+                  Expanded(
+                    child: Text('Recipes parents like you are sharing', style: Theme.of(context).textTheme.headlineSmall),
+                  ),
                   if (filter.hasActiveFilters)
                     TextButton(
                       onPressed: () => ref.read(recipeFilterProvider.notifier).update((_) => RecipeFilter.empty),
