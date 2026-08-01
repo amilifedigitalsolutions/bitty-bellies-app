@@ -48,8 +48,8 @@ class RecipeRowCard extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 2,
                       children: [
-                        _MiniChip(recipe.ageStage),
-                        _MiniChip(recipe.cuisine),
+                        _MiniChip(recipe.ageStage, color: AppColors.primaryLight),
+                        _MiniChip(recipe.cuisine, color: AppColors.accentLight),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -102,14 +102,15 @@ class _Thumbnail extends StatelessWidget {
 
 class _MiniChip extends StatelessWidget {
   final String label;
-  const _MiniChip(this.label);
+  final Color color;
+  const _MiniChip(this.label, {required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: color,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600)),

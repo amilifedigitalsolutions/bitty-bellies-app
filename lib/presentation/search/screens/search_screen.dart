@@ -38,9 +38,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 64,
+        toolbarHeight: 72,
         centerTitle: true,
-        title: Image.asset('assets/logos/logo-long.png', height: 44, fit: BoxFit.contain),
+        title: Image.asset('assets/logos/logo-long.png', height: 52, fit: BoxFit.contain),
         actions: [
           IconButton(
             icon: Icon(_showFilters ? Icons.filter_list_off : Icons.filter_list),

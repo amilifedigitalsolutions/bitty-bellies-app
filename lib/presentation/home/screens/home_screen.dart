@@ -24,12 +24,12 @@ class HomeScreen extends ConsumerWidget {
           // App bar
           SliverAppBar(
             floating: true,
-            toolbarHeight: 96,
+            toolbarHeight: 108,
             centerTitle: true,
             title: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/logos/logo-long.png', height: 60, fit: BoxFit.contain),
+                Image.asset('assets/logos/logo-long.png', height: 72, fit: BoxFit.contain),
                 if (user != null) ...[
                   const SizedBox(height: 4),
                   Text('Hi, ${user.displayName}!', style: Theme.of(context).textTheme.bodyMedium),
@@ -73,6 +73,7 @@ class HomeScreen extends ConsumerWidget {
                     return FilterChip(
                       label: const Text('All'),
                       selected: isAll,
+                      backgroundColor: AppColors.surfaceVariant,
                       onSelected: (_) => ref
                           .read(recipeFilterProvider.notifier)
                           .update((f) => f.copyWith(mealCategories: [])),
@@ -80,9 +81,13 @@ class HomeScreen extends ConsumerWidget {
                   }
                   final mealType = AppConstants.mealCategories[i - 1];
                   final selected = filter.mealCategories.contains(mealType);
+                  // Each unselected meal-type chip cycles through the brand
+                  // pastel fills instead of one flat neutral tone, so this
+                  // row reads as more colorful at a glance.
                   return FilterChip(
                     label: Text(mealType),
                     selected: selected,
+                    backgroundColor: AppColors.pastelFills[(i - 1) % AppColors.pastelFills.length],
                     onSelected: (v) {
                       final updated = selected
                           ? (List.of(filter.mealCategories)..remove(mealType))

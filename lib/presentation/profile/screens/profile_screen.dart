@@ -99,7 +99,7 @@ class _AuthenticatedProfileState extends ConsumerState<_AuthenticatedProfile>
                 children: [
                   Align(
                     alignment: Alignment.center,
-                    child: Image.asset('assets/logos/logo-long.png', height: 52, fit: BoxFit.contain),
+                    child: Image.asset('assets/logos/logo-long.png', height: 68, fit: BoxFit.contain),
                   ),
                   const SizedBox(height: 20),
                   Row(

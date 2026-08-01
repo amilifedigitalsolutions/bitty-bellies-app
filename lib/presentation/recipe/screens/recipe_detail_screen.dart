@@ -206,9 +206,9 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
                     runSpacing: 4,
                     children: [
                       _Tag(recipe.ageStage, color: AppColors.primaryLight),
-                      _Tag(recipe.texture, color: AppColors.surfaceVariant),
-                      _Tag(recipe.cuisine, color: AppColors.surfaceVariant),
-                      ...recipe.mealCategories.map((c) => _Tag(c, color: AppColors.surfaceVariant)),
+                      _Tag(recipe.texture, color: AppColors.secondaryLight),
+                      _Tag(recipe.cuisine, color: AppColors.accentLight),
+                      ...recipe.mealCategories.map((c) => _Tag(c, color: AppColors.primaryLight)),
                       if (recipe.pendingLabel != null) _Tag(recipe.pendingLabel!, color: AppColors.primaryLight),
                     ],
                   ),

@@ -32,7 +32,7 @@ class RecipeCard extends StatelessWidget {
                     children: [
                       _MiniChip(recipe.ageStage, color: AppColors.primaryLight),
                       const SizedBox(width: 6),
-                      _MiniChip(recipe.cuisine, color: AppColors.surfaceVariant),
+                      _MiniChip(recipe.cuisine, color: AppColors.accentLight),
                       if (recipe.pendingLabel != null) ...[
                         const SizedBox(width: 6),
                         _MiniChip(recipe.pendingLabel!, color: AppColors.primaryLight),
