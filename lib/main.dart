@@ -17,6 +17,30 @@ void main() async {
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((r) => debugPrint('[${r.level.name}] ${r.loggerName}: ${r.message}'));
 
+  // A long-standing, still-open upstream go_router bug (flutter/flutter
+  // #107010, #107045, #122507, #140586, #156585 — see app_router.dart)
+  // intermittently trips a debug-only Navigator consistency check
+  // (assert-gated, confirmed via source + cross-platform testing to be
+  // stripped from every release build, so it can never reach a shipped
+  // app). In debug it replaces the whole screen with Flutter's default
+  // crash overlay via ErrorWidget.builder. For specifically this known,
+  // harmless error, show a calm loading state instead of the crash screen
+  // — hot-restart (r) if it doesn't clear on its own navigation.
+  // (Tried forcing an automatic remount here too; that made things worse —
+  // it tore down an already-partially-corrupted tree and tripped a second,
+  // different assertion. Not attempting auto-recovery.) Every other error
+  // still gets Flutter's default crash screen.
+  final defaultErrorWidgetBuilder = ErrorWidget.builder;
+  ErrorWidget.builder = (details) {
+    if (details.exceptionAsString().contains('keyReservation.contains(key)')) {
+      return const ColoredBox(
+        color: AppColors.background,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return defaultErrorWidgetBuilder(details);
+  };
+
   await _configureAmplify();
 
   runApp(const ProviderScope(child: BLWRecipesApp()));
