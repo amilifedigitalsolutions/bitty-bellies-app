@@ -118,16 +118,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             top: 0,
             left: 0,
             right: 0,
-            child: ClipPath(
+            // PhysicalShape (not plain ClipPath) so the curve casts a real
+            // drop shadow along its own silhouette instead of a flat
+            // rectangular one, giving the header some lift/dimension off
+            // the page. The fill itself is a 3-stop gold -> cream-highlight
+            // -> blue gradient rather than a flat 2-color wash, for the
+            // same reason.
+            child: PhysicalShape(
               key: _headerKey,
               clipper: const _CurvedHeaderClipper(),
+              color: AppColors.secondaryLight,
+              elevation: 10,
+              shadowColor: Colors.black.withValues(alpha: 0.28),
               child: Container(
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppColors.primaryLight, AppColors.accentLight],
+                    colors: [AppColors.secondaryLight, AppColors.surface, AppColors.primaryLight],
+                    stops: [0.0, 0.5, 1.0],
                   ),
                 ),
                 child: SafeArea(
