@@ -110,10 +110,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
 
-          // Curved gradient header — fixed in place while the list above
-          // scrolls underneath it. Uses the light pastel pair (not the
-          // fully-saturated brand colors) so the logo and dark title text
-          // stay legible without needing to flip everything to white text.
+          // Curved header — fixed in place while the list above scrolls
+          // underneath it. Flat light gold, no gradient.
           Positioned(
             top: 0,
             left: 0,
@@ -121,9 +119,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // PhysicalShape (not plain ClipPath) so the curve casts a real
             // drop shadow along its own silhouette instead of a flat
             // rectangular one, giving the header some lift/dimension off
-            // the page. The fill itself is a 3-stop gold -> cream-highlight
-            // -> blue gradient rather than a flat 2-color wash, for the
-            // same reason.
+            // the page.
             child: PhysicalShape(
               key: _headerKey,
               clipper: const _CurvedHeaderClipper(),
@@ -132,14 +128,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               shadowColor: Colors.black.withValues(alpha: 0.28),
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.secondaryLight, AppColors.surface, AppColors.primaryLight],
-                    stops: [0.0, 0.5, 1.0],
-                  ),
-                ),
+                color: AppColors.secondaryLight,
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
@@ -197,14 +186,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               }
                               final mealType = AppConstants.mealCategories[i - 1];
                               final selected = filter.mealCategories.contains(mealType);
-                              // Each unselected meal-type chip cycles through
-                              // the brand pastel fills instead of one flat
-                              // neutral tone, so this row reads as more
-                              // colorful at a glance.
+                              // Cycles through blue/purple (not gold — the
+                              // header itself is flat gold now, so a gold
+                              // chip would be invisible against it) instead
+                              // of one flat neutral tone.
+                              const chipColors = [AppColors.primaryLight, AppColors.accentLight];
                               return FilterChip(
                                 label: Text(mealType),
                                 selected: selected,
-                                backgroundColor: AppColors.pastelFills[(i - 1) % AppColors.pastelFills.length],
+                                backgroundColor: chipColors[(i - 1) % chipColors.length],
                                 onSelected: (v) {
                                   final updated = selected
                                       ? (List.of(filter.mealCategories)..remove(mealType))
