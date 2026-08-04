@@ -132,7 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 44),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 76),
                     child: Column(
                       children: [
                         Row(
@@ -286,9 +286,12 @@ class _CurvedHeaderClipper extends CustomClipper<Path> {
 
   @override
   Path getClip(Size size) {
+    // Much deeper swing than the first pass (120px total vs 60px) so the
+    // scoop actually reads as a pronounced curve rather than a barely
+    // visible dip, matching the reference screenshot.
     return Path()
-      ..lineTo(0, size.height - 36)
-      ..quadraticBezierTo(size.width / 2, size.height + 24, size.width, size.height - 36)
+      ..lineTo(0, size.height - 70)
+      ..quadraticBezierTo(size.width / 2, size.height + 50, size.width, size.height - 70)
       ..lineTo(size.width, 0)
       ..close();
   }
