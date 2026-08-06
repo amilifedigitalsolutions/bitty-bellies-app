@@ -123,59 +123,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: PhysicalShape(
               key: _headerKey,
               clipper: const _CurvedHeaderClipper(),
-              color: AppColors.primary,
+              color: AppColors.secondaryLight,
               elevation: 10,
               shadowColor: Colors.black.withValues(alpha: 0.28),
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.primary, AppColors.accent],
-                  ),
-                ),
+                color: AppColors.secondaryLight,
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 76),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Image.asset('assets/logos/logo-long.png', height: 32, fit: BoxFit.contain),
                             const Spacer(),
                             IconButton(
-                              icon: const Icon(Icons.search, color: Colors.white),
+                              icon: const Icon(Icons.search),
                               onPressed: () => context.go('/search'),
                             ),
                             if (user == null)
                               TextButton(
                                 onPressed: () => context.push('/login'),
-                                child: const Text('Sign in', style: TextStyle(color: Colors.white)),
+                                child: const Text('Sign in'),
                               )
                             else
                               IconButton(
-                                icon: const Icon(Icons.bookmark_outline, color: Colors.white),
+                                icon: const Icon(Icons.bookmark_outline),
                                 onPressed: () => context.push('/saved'),
                               ),
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        // Big bold greeting is the header's focal point,
-                        // matching the reference — the logo shrinks to a
-                        // small top-row wordmark instead of the centerpiece.
-                        Text(
-                          user != null ? 'Hi, ${user.displayName}!' : 'Welcome!',
-                          style: Theme.of(context).textTheme.displayLarge?.copyWith(color: Colors.white),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          AppConstants.appTagline,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
-                        ),
-                        const SizedBox(height: 20),
+                        Image.asset('assets/logos/logo-long.png', height: 72, fit: BoxFit.contain),
+                        if (user != null) ...[
+                          const SizedBox(height: 4),
+                          Text('Hi, ${user.displayName}!', style: Theme.of(context).textTheme.bodyMedium),
+                        ],
+                        const SizedBox(height: 16),
 
                         // Meal-type quick-filter chips — a faster filter for
                         // what a parent needs right now than browsing by
@@ -257,15 +241,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             // past) the Clear button once multiple filters
                             // are active and it shows up.
                             Expanded(
-                              child: Text(
-                                'Recipes parents like you are sharing',
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white),
-                              ),
+                              child: Text('Recipes parents like you are sharing', style: Theme.of(context).textTheme.headlineSmall),
                             ),
                             if (filter.hasActiveFilters)
                               TextButton(
                                 onPressed: () => ref.read(recipeFilterProvider.notifier).update((_) => RecipeFilter.empty),
-                                child: const Text('Clear', style: TextStyle(color: Colors.white)),
+                                child: const Text('Clear'),
                               ),
                           ],
                         ),
