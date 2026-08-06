@@ -14,15 +14,9 @@ class AppConstants {
 
   // Age stages
   static const List<String> ageStages = [
-    '6+ months',
-    '7+ months',
-    '8+ months',
-    '9+ months',
-    '10+ months',
+    '4 - 6 months',
+    '6 - 12 months',
     '12+ months',
-    '18+ months',
-    '2+ years',
-    'All ages',
   ];
 
   // Texture/format

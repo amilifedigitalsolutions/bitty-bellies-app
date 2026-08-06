@@ -144,7 +144,7 @@ class Recipe extends Equatable {
   final int? servings;
 
   // Classification
-  final String ageStage;           // e.g. '6+ months'
+  final String ageStage;           // e.g. '6 - 12 months'
   final String texture;            // e.g. 'finger food'
   final String cuisine;
   final String? cultureRegion;
