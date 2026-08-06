@@ -285,7 +285,8 @@ class Recipe extends Equatable {
 
     buffer
       ..writeln()
-      ..write('Shared from Bitty Bellies — real recipes from real parents.');
+      ..write('Shared from Bitty Bellies — real recipes, from real parents, just like you. '
+          'Download on the App Store for more smart, kid-friendly recipes.');
 
     return buffer.toString();
   }
