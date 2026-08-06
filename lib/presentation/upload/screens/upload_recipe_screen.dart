@@ -39,6 +39,10 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
   late String _selectedAgeStage;
   late String _selectedTexture;
   late String _selectedCuisine;
+  // Free-text cuisine when the fixed list doesn't have one that fits —
+  // stored directly as the recipe's cuisine value (not literally "Other"),
+  // so it round-trips as a normal string with no schema change needed.
+  late final TextEditingController _customCuisineCtrl;
   late final TextEditingController _cultureCtrl;
   late List<String> _selectedMealCategories;
   late List<String> _selectedDietTypes;
@@ -70,7 +74,13 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
     _servingsCtrl = TextEditingController(text: '${r?.servings ?? 1}');
     _selectedAgeStage = r?.ageStage ?? AppConstants.ageStages.first;
     _selectedTexture = r?.texture ?? AppConstants.textures.first;
-    _selectedCuisine = r?.cuisine ?? AppConstants.cuisines.first;
+    // An existing recipe's cuisine might itself be a previously-typed custom
+    // value that isn't in the fixed list — DropdownButton asserts its value
+    // must match one of its items, so that has to map to 'Other' plus a
+    // pre-filled custom field rather than being passed through as-is.
+    final isCustomCuisine = r != null && !AppConstants.cuisines.contains(r.cuisine);
+    _selectedCuisine = isCustomCuisine ? 'Other' : (r?.cuisine ?? AppConstants.cuisines.first);
+    _customCuisineCtrl = TextEditingController(text: isCustomCuisine ? r.cuisine : '');
     _cultureCtrl = TextEditingController(text: r?.cultureRegion ?? '');
     _selectedMealCategories = List.of(r?.mealCategories ?? const []);
     _selectedDietTypes = List.of(r?.dietTypes ?? const []);
@@ -98,6 +108,7 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
     _prepCtrl.dispose();
     _cookCtrl.dispose();
     _servingsCtrl.dispose();
+    _customCuisineCtrl.dispose();
     _cultureCtrl.dispose();
     _chokingCtrl.dispose();
     _safetyCtrl.dispose();
@@ -134,6 +145,10 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
         }
         return true;
       case 1:
+        if (_selectedCuisine == 'Other' && _customCuisineCtrl.text.trim().isEmpty) {
+          _showPageError('Enter your cuisine, or choose one from the list.');
+          return false;
+        }
         if (_selectedAllergens.isEmpty && !_noAllergensConfirmed) {
           _showPageError('Select any allergens present, or confirm "None of these" applies.');
           return false;
@@ -287,7 +302,7 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
       servings: int.tryParse(_servingsCtrl.text),
       ageStage: _selectedAgeStage,
       texture: _selectedTexture,
-      cuisine: _selectedCuisine,
+      cuisine: _selectedCuisine == 'Other' ? _customCuisineCtrl.text.trim() : _selectedCuisine,
       cultureRegion: _cultureCtrl.text.trim().isEmpty ? null : _cultureCtrl.text.trim(),
       mealCategories: _selectedMealCategories,
       dietTypes: _selectedDietTypes,
@@ -391,6 +406,7 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
                     selectedAgeStage: _selectedAgeStage,
                     selectedTexture: _selectedTexture,
                     selectedCuisine: _selectedCuisine,
+                    customCuisineCtrl: _customCuisineCtrl,
                     cultureCtrl: _cultureCtrl,
                     selectedMealCategories: _selectedMealCategories,
                     selectedDietTypes: _selectedDietTypes,
@@ -578,6 +594,7 @@ class _BasicsPage extends StatelessWidget {
 
 class _ClassificationPage extends StatelessWidget {
   final String selectedAgeStage, selectedTexture, selectedCuisine;
+  final TextEditingController customCuisineCtrl;
   final TextEditingController cultureCtrl;
   final List<String> selectedMealCategories, selectedDietTypes, selectedAllergens;
   final bool noAllergensConfirmed;
@@ -589,6 +606,7 @@ class _ClassificationPage extends StatelessWidget {
     required this.selectedAgeStage,
     required this.selectedTexture,
     required this.selectedCuisine,
+    required this.customCuisineCtrl,
     required this.cultureCtrl,
     required this.selectedMealCategories,
     required this.selectedDietTypes,
@@ -630,6 +648,14 @@ class _ClassificationPage extends StatelessWidget {
             items: AppConstants.cuisines,
             onChanged: onCuisineChanged,
           ),
+          if (selectedCuisine == 'Other') ...[
+            const SizedBox(height: 16),
+            AppTextField(
+              controller: customCuisineCtrl,
+              label: 'What cuisine is it?',
+              hint: 'e.g. Ethiopian, Filipino, Uzbek',
+            ),
+          ],
           const SizedBox(height: 16),
           AppTextField(
             controller: cultureCtrl,
