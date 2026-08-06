@@ -240,6 +240,56 @@ class Recipe extends Equatable {
   // ahead of moderator approval — null once a recipe leaves PENDING_REVIEW.
   String? get pendingLabel => status == 'PENDING_REVIEW' ? 'Pending review' : null;
 
+  // Full recipe content for the share sheet — description, timing,
+  // ingredients, and steps, not just the title. share_plus only takes plain
+  // text (no rich HTML/markdown), and this app has no public web URL yet to
+  // share a link to instead, so the text itself has to be self-contained.
+  String get shareText {
+    final buffer = StringBuffer()
+      ..writeln(title)
+      ..writeln()
+      ..writeln(description)
+      ..writeln()
+      ..writeln('$totalTimeLabel · $ageStage${servings != null ? ' · Serves $servings' : ''}');
+
+    if (ingredients.isNotEmpty) {
+      buffer
+        ..writeln()
+        ..writeln('Ingredients:');
+      for (final i in ingredients) {
+        final parts = <String>[
+          if (i.quantity.isNotEmpty) i.quantity,
+          if (i.unit != null && i.unit!.isNotEmpty) i.unit!,
+        ];
+        final qty = parts.isEmpty ? '' : '${parts.join(' ')} ';
+        final notes = i.notes != null && i.notes!.isNotEmpty ? ' (${i.notes})' : '';
+        buffer.writeln('- $qty${i.name}$notes');
+      }
+    }
+
+    if (steps.isNotEmpty) {
+      buffer
+        ..writeln()
+        ..writeln('Steps:');
+      for (final s in steps) {
+        buffer.writeln('${s.stepNumber}. ${s.instruction}');
+        if (s.tip != null && s.tip!.isNotEmpty) buffer.writeln('   Tip: ${s.tip}');
+      }
+    }
+
+    if (allergens.isNotEmpty) {
+      buffer
+        ..writeln()
+        ..writeln('Contains: ${allergens.join(', ')}');
+    }
+
+    buffer
+      ..writeln()
+      ..write('Shared from Bitty Bellies — real recipes from real parents.');
+
+    return buffer.toString();
+  }
+
   factory Recipe.fromJson(Map<String, dynamic> json) => Recipe(
         id: json['id'] as String,
         title: json['title'] as String,
