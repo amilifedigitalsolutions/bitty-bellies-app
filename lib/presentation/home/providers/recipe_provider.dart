@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/repositories/recipe_repository_impl.dart';
+import '../../../domain/models/meal_window.dart';
 import '../../../domain/models/recipe.dart';
 import '../../../domain/models/recipe_filter.dart';
 import '../../../domain/repositories/recipe_repository.dart';
@@ -16,6 +17,22 @@ final recipeListProvider = FutureProvider.autoDispose<List<Recipe>>((ref) async 
   final repo = ref.read(recipeRepositoryProvider);
   final filter = ref.watch(recipeFilterProvider);
   final result = await repo.getRecipes(filter: filter);
+  return result.when(success: (r) => r, failure: (e) => throw e);
+});
+
+// Which meal is "now", based on the device's local time — read once per
+// provider container build rather than per rebuild, so it doesn't drift
+// mid-session; a cold app relaunch is enough to pick up a new window.
+final currentMealWindowProvider = Provider<MealWindow>((ref) => MealWindow.forTime(DateTime.now()));
+
+// Home's "right now" recommendations — deliberately its own provider using
+// a locally-built RecipeFilter, not recipeFilterProvider, so it can't be
+// stomped by (or itself stomp) whatever filter state Search is holding;
+// the two screens' recipe lists are independent.
+final homeRecommendedRecipesProvider = FutureProvider.autoDispose<List<Recipe>>((ref) async {
+  final window = ref.watch(currentMealWindowProvider);
+  final repo = ref.read(recipeRepositoryProvider);
+  final result = await repo.getRecipes(filter: RecipeFilter(mealCategories: window.categories));
   return result.when(success: (r) => r, failure: (e) => throw e);
 });
 

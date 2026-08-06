@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/error_view.dart';
-import '../../../domain/models/recipe_filter.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../recipe/widgets/recipe_card.dart';
 import '../providers/recipe_provider.dart';
@@ -41,11 +39,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider).valueOrNull;
-    final recipesAsync = ref.watch(recipeListProvider);
-    final filter = ref.watch(recipeFilterProvider);
+    final recipesAsync = ref.watch(homeRecommendedRecipesProvider);
+    final mealWindow = ref.watch(currentMealWindowProvider);
 
     // Re-measure whenever content that can change the header's height
-    // changes (greeting appearing/disappearing, Clear button, filters).
+    // changes (greeting appearing/disappearing).
     WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeader());
 
     return Scaffold(
@@ -62,10 +60,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               recipesAsync.when(
                 data: (recipes) {
                   if (recipes.isEmpty) {
-                    return const SliverFillRemaining(
+                    return SliverFillRemaining(
                       child: EmptyView(
-                        message: 'No recipes found',
-                        subMessage: 'Try different filters or check back later.',
+                        message: 'No ${mealWindow.label.toLowerCase()} recipes yet',
+                        subMessage: 'Try Search to browse everything.',
                         icon: Icons.no_food,
                       ),
                     );
@@ -101,7 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 error: (e, _) => SliverFillRemaining(
                   child: ErrorView(
                     message: 'Could not load recipes. Check your connection.',
-                    onRetry: () => ref.invalidate(recipeListProvider),
+                    onRetry: () => ref.invalidate(homeRecommendedRecipesProvider),
                   ),
                 ),
               ),
@@ -163,10 +161,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               child: Image.asset('assets/logos/logo-long.png', height: 24, fit: BoxFit.contain),
                             ),
                             const Spacer(),
-                            IconButton(
-                              icon: const Icon(Icons.search),
-                              onPressed: () => context.go('/search'),
-                            ),
                             if (user == null)
                               TextButton(
                                 onPressed: () => context.push('/login'),
@@ -181,7 +175,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          user != null ? "What's cooking, ${user.displayName.split(' ').first}?" : "What's cooking today?",
+                          user != null
+                              ? '${mealWindow.label} on your mind, ${user.displayName.split(' ').first}?'
+                              : '${mealWindow.label} on your mind?',
                           // Lighter than the theme's default headlineLarge
                           // weight (w800) — still reads as a hero line at
                           // this size without looking shouty.
@@ -189,48 +185,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Meal-type quick-filter chips — a faster filter for
-                        // what a parent needs right now than browsing by
-                        // cuisine, which still lives in Search's full filter
-                        // panel.
-                        SizedBox(
-                          height: 48,
-                          width: double.infinity,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: AppConstants.mealCategories.length + 1,
-                            separatorBuilder: (_, __) => const SizedBox(width: 8),
-                            itemBuilder: (context, i) {
-                              if (i == 0) {
-                                final isAll = filter.mealCategories.isEmpty;
-                                return FilterChip(
-                                  label: const Text('All'),
-                                  selected: isAll,
-                                  backgroundColor: AppColors.surface,
-                                  onSelected: (_) => ref
-                                      .read(recipeFilterProvider.notifier)
-                                      .update((f) => f.copyWith(mealCategories: [])),
-                                );
-                              }
-                              final mealType = AppConstants.mealCategories[i - 1];
-                              final selected = filter.mealCategories.contains(mealType);
-                              // Cycles through blue/purple (not gold — the
-                              // header itself is flat gold now, so a gold
-                              // chip would be invisible against it) instead
-                              // of one flat neutral tone.
-                              const chipColors = [AppColors.primaryLight, AppColors.accentLight];
-                              return FilterChip(
-                                label: Text(mealType),
-                                selected: selected,
-                                backgroundColor: chipColors[(i - 1) % chipColors.length],
-                                onSelected: (v) {
-                                  final updated = selected
-                                      ? (List.of(filter.mealCategories)..remove(mealType))
-                                      : [...filter.mealCategories, mealType];
-                                  ref.read(recipeFilterProvider.notifier).update((f) => f.copyWith(mealCategories: updated));
-                                },
-                              );
-                            },
+                        // Tap-through search bar — replaces the old
+                        // meal-type filter pills. Browsing/filtering now
+                        // lives entirely on Search; Home's recipe list
+                        // below is auto-filtered by the current meal
+                        // window instead of manual pill taps.
+                        Material(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(24),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () => context.go('/search'),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Search recipes, ingredients, cultures...',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -260,26 +241,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Section header
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // Expanded so the title wraps within its own
-                            // space instead of crowding (or overflowing
-                            // past) the Clear button once multiple filters
-                            // are active and it shows up.
-                            Expanded(
-                              child: Text(
-                                'Recipes other parents are loving right now',
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                            if (filter.hasActiveFilters)
-                              TextButton(
-                                onPressed: () => ref.read(recipeFilterProvider.notifier).update((_) => RecipeFilter.empty),
-                                child: const Text('Clear'),
-                              ),
-                          ],
+                        // Section header — no more Clear button here, since
+                        // this list is auto-filtered by the current meal
+                        // window rather than manual pill selection.
+                        Text(
+                          '${mealWindow.label} recipes other parents are loving',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
