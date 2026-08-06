@@ -123,52 +123,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: PhysicalShape(
               key: _headerKey,
               clipper: const _CurvedHeaderClipper(),
+              // PhysicalShape defaults to clipBehavior: Clip.none, which
+              // only shapes the drop shadow — the child still paints as a
+              // plain rectangle on top and fully hides the curve. This is
+              // the actual fix that makes the curve appear at all, not
+              // just cast a curved shadow under a flat header.
+              clipBehavior: Clip.antiAlias,
               color: AppColors.secondaryLight,
               elevation: 10,
               shadowColor: Colors.black.withValues(alpha: 0.28),
               child: Container(
                 width: double.infinity,
-                // Subtle top-to-bottom gradient within the same gold family
-                // (not a hue change) for a bit more depth/lift than a flat
-                // fill, without reopening the flat-vs-gradient decision.
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [AppColors.secondaryLight, AppColors.secondary],
-                  ),
-                ),
+                color: AppColors.secondaryLight,
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 76),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Small corner wordmark instead of a big centered
+                        // logo — parenting apps (Peanut, Huckleberry,
+                        // BabyCenter, the Muna reference) keep branding
+                        // small and let the personal greeting carry the
+                        // header, since the app reads as "for you and your
+                        // kid" rather than as a brand showcase.
                         Row(
                           children: [
+                            // White backdrop chip behind the wordmark — the
+                            // logo's baby illustration is skin/cream toned
+                            // and disappears against the gold header
+                            // without it.
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Image.asset('assets/logos/logo-long.png', height: 24, fit: BoxFit.contain),
+                            ),
                             const Spacer(),
-                            _HeaderIconButton(
-                              icon: Icons.search,
+                            IconButton(
+                              icon: const Icon(Icons.search),
                               onPressed: () => context.go('/search'),
                             ),
-                            const SizedBox(width: 8),
                             if (user == null)
-                              _HeaderPillButton(
-                                label: 'Sign in',
+                              TextButton(
                                 onPressed: () => context.push('/login'),
+                                child: const Text('Sign in'),
                               )
                             else
-                              _HeaderIconButton(
-                                icon: Icons.bookmark_outline,
+                              IconButton(
+                                icon: const Icon(Icons.bookmark_outline),
                                 onPressed: () => context.push('/saved'),
                               ),
                           ],
                         ),
-                        Image.asset('assets/logos/logo-long.png', height: 72, fit: BoxFit.contain),
-                        if (user != null) ...[
-                          const SizedBox(height: 4),
-                          Text('Hi, ${user.displayName}!', style: Theme.of(context).textTheme.bodyMedium),
-                        ],
+                        const SizedBox(height: 8),
+                        Text(
+                          user != null ? "What's cooking, ${user.displayName.split(' ').first}?" : "What's cooking today?",
+                          style: Theme.of(context).textTheme.headlineLarge,
+                        ),
                         const SizedBox(height: 16),
 
                         // Meal-type quick-filter chips — a faster filter for
@@ -251,7 +266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             // past) the Clear button once multiple filters
                             // are active and it shows up.
                             Expanded(
-                              child: Text('Recipes parents like you are sharing', style: Theme.of(context).textTheme.headlineSmall),
+                              child: Text('Recipes other parents are loving right now', style: Theme.of(context).textTheme.headlineSmall),
                             ),
                             if (filter.hasActiveFilters)
                               TextButton(
@@ -289,60 +304,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// Frosted pill button chip for header actions (search, saved, sign in) —
-// a soft light-surface circle/pill against the gold header, rather than a
-// bare icon, for the more polished "floating chip" look of the reference.
-class _HeaderIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onPressed;
-  const _HeaderIconButton({required this.icon, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      shape: const CircleBorder(),
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.2),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Icon(icon, color: AppColors.primaryDark, size: 20),
-        ),
-      ),
-    );
-  }
-}
-
-class _HeaderPillButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onPressed;
-  const _HeaderPillButton({required this.label, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      shape: const StadiumBorder(),
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.2),
-      child: InkWell(
-        customBorder: const StadiumBorder(),
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Text(
-            label,
-            style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w700),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // Soft downward-bulging curve on the bottom edge of the header gradient,
 // same wave-header shape used across many social/parenting apps.
 class _CurvedHeaderClipper extends CustomClipper<Path> {
@@ -350,12 +311,12 @@ class _CurvedHeaderClipper extends CustomClipper<Path> {
 
   @override
   Path getClip(Size size) {
-    // Much deeper swing than the first pass (120px total vs 60px) so the
-    // scoop actually reads as a pronounced curve rather than a barely
-    // visible dip, matching the reference screenshot.
+    // Tightened alongside the shorter bottom padding (76 -> 40) so the
+    // curve's flat corners sit right after the content instead of leaving
+    // a big block of plain gold below it; still a clearly visible scoop.
     return Path()
-      ..lineTo(0, size.height - 70)
-      ..quadraticBezierTo(size.width / 2, size.height + 50, size.width, size.height - 70)
+      ..lineTo(0, size.height - 36)
+      ..quadraticBezierTo(size.width / 2, size.height + 36, size.width, size.height - 36)
       ..lineTo(size.width, 0)
       ..close();
   }
