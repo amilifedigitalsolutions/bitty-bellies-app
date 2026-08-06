@@ -16,15 +16,46 @@ class Child extends Equatable {
   // "8 months" / "2 years" — computed from birthdate rather than stored, so
   // it never goes stale.
   String get ageLabel {
-    final now = DateTime.now();
-    var months = (now.year - birthdate.year) * 12 + (now.month - birthdate.month);
-    if (now.day < birthdate.day) months -= 1;
-    if (months < 0) months = 0;
+    final months = ageInMonths;
     if (months < 24) {
       return months == 1 ? '1 month' : '$months months';
     }
     final years = months ~/ 12;
     return years == 1 ? '1 year' : '$years years';
+  }
+
+  int get ageInMonths {
+    final now = DateTime.now();
+    var months = (now.year - birthdate.year) * 12 + (now.month - birthdate.month);
+    if (now.day < birthdate.day) months -= 1;
+    return months < 0 ? 0 : months;
+  }
+
+  // AppConstants.ageStages' minimum-month threshold, keyed by the exact
+  // display strings — a fixed, small list, so a lookup table is more
+  // robust than parsing "N+ months"/"N+ years" out of the label text.
+  static const Map<String, int> _stageMinMonths = {
+    '6+ months': 6,
+    '7+ months': 7,
+    '8+ months': 8,
+    '9+ months': 9,
+    '10+ months': 10,
+    '12+ months': 12,
+    '18+ months': 18,
+    '2+ years': 24,
+  };
+
+  // Every age-stage tag this child is old enough for (i.e. safe to show —
+  // a recipe tagged "12+ months" shouldn't surface for a 9-month-old),
+  // plus the catch-all "All ages". Takes the app's full stage list rather
+  // than hardcoding it here, so this stays in sync with AppConstants.
+  List<String> matchingAgeStages(List<String> allStages) {
+    final months = ageInMonths;
+    return allStages.where((s) {
+      if (s == 'All ages') return true;
+      final min = _stageMinMonths[s];
+      return min != null && min <= months;
+    }).toList();
   }
 
   factory Child.fromJson(Map<String, dynamic> json) => Child(

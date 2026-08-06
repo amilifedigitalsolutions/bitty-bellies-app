@@ -36,6 +36,19 @@ final homeRecommendedRecipesProvider = FutureProvider.autoDispose<List<Recipe>>(
   return result.when(success: (r) => r, failure: (e) => throw e);
 });
 
+// Every recipe, sorted A-Z by title, for the Search screen's "Browse A-Z"
+// index. Same 200-item MVP cap and future-GSI caveat as
+// availableCuisinesProvider below — fine at current volume, will need a
+// proper paginated/indexed browse once the catalog grows past that.
+final allRecipesAlphabeticalProvider = FutureProvider.autoDispose<List<Recipe>>((ref) async {
+  final repo = ref.read(recipeRepositoryProvider);
+  final result = await repo.getRecipes(limit: 200);
+  return result.when(
+    success: (r) => (List<Recipe>.from(r)..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()))),
+    failure: (e) => throw e,
+  );
+});
+
 // Cuisines actually present in published recipes — drives the Home screen's
 // filter pills so a pill is never shown with zero matching recipes.
 final availableCuisinesProvider = FutureProvider.autoDispose<List<String>>((ref) async {

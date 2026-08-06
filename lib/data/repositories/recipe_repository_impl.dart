@@ -24,10 +24,11 @@ class RecipeRepositoryImpl implements RecipeRepository {
   Future<Result<List<Recipe>>> getRecipes({
     RecipeFilter filter = RecipeFilter.empty,
     String? nextToken,
+    int limit = 20,
   }) async {
     try {
       final variables = <String, dynamic>{
-        'limit': 20,
+        'limit': limit,
         if (nextToken != null) 'nextToken': nextToken,
         'filter': _buildFilter(filter),
       };

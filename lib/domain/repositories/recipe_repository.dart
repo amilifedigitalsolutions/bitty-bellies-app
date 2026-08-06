@@ -7,7 +7,7 @@ import '../../core/utils/result.dart';
 
 abstract class RecipeRepository {
   // Browsing — no auth required
-  Future<Result<List<Recipe>>> getRecipes({RecipeFilter filter = RecipeFilter.empty, String? nextToken});
+  Future<Result<List<Recipe>>> getRecipes({RecipeFilter filter = RecipeFilter.empty, String? nextToken, int limit = 20});
   Future<Result<Recipe>> getRecipeById(String id);
   Future<Result<List<Recipe>>> getRecipesByCreator(String creatorId, {String? nextToken});
   Future<Result<List<String>>> getAvailableCuisines();
