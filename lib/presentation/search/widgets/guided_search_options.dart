@@ -1,24 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../auth/providers/auth_provider.dart';
 import 'search_by_child_sheet.dart';
 
 // Three entry points into Search's guided flows — lives on Home now (in
 // place of a plain search bar), since Search itself defaults straight to
 // the A-Z browse list.
-class GuidedSearchOptions extends StatelessWidget {
+class GuidedSearchOptions extends ConsumerWidget {
   const GuidedSearchOptions({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider).valueOrNull;
+
     return Row(
       children: [
         Expanded(
           child: _GuidedOptionCard(
             icon: Icons.child_care,
             label: 'Search by child',
-            onTap: () => showSearchByChildSheet(context),
+            // Signed-out users have no children on their profile to search
+            // by, so this needs a real account rather than falling through
+            // to the sheet's own "no children yet" empty state.
+            onTap: () => user == null ? context.push('/login') : showSearchByChildSheet(context),
           ),
         ),
         const SizedBox(width: 10),
