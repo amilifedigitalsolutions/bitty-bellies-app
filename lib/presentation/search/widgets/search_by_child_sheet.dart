@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../domain/models/recipe_filter.dart';
@@ -78,6 +79,10 @@ class _SearchByChildSheet extends ConsumerWidget {
                               (_) => RecipeFilter(ageStages: c.matchingAgeStages(AppConstants.ageStages)),
                             );
                         Navigator.pop(context);
+                        // This sheet is opened from Home now, so a plain
+                        // pop would just close it there — go to Search to
+                        // actually show the filtered results.
+                        context.go('/search');
                       },
                     )),
               ],

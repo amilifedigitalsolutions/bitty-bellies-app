@@ -5,10 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../domain/models/recipe.dart';
 import '../../../domain/models/recipe_filter.dart';
 import '../../home/providers/recipe_provider.dart';
 import '../../recipe/widgets/recipe_card.dart';
-import '../widgets/search_by_child_sheet.dart';
+import '../../recipe/widgets/recipe_row_card.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -36,7 +37,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final filter = ref.watch(recipeFilterProvider);
-    final recipesAsync = ref.watch(recipeListProvider);
+    final hasSearch = filter.hasActiveFilters;
 
     return Scaffold(
       appBar: AppBar(
@@ -82,119 +83,110 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           // to exceed the screen (RenderFlex overflow).
           if (_showFilters) Flexible(child: _FilterPanel(filter: filter)),
 
-          // Guided entry points — only shown before the user has actually
-          // started a search, so they don't compete with real results.
-          if (!_showFilters && !filter.hasActiveFilters && _searchCtrl.text.isEmpty) const _GuidedSearchOptions(),
-
-          Expanded(
-            child: recipesAsync.when(
-              data: (recipes) {
-                if (recipes.isEmpty) {
-                  return const EmptyView(
-                    message: 'No recipes found',
-                    subMessage: 'Try adjusting your filters or search terms.',
-                  );
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: recipes.length,
-                  itemBuilder: (_, i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: RecipeCard(
-                      recipe: recipes[i],
-                      onTap: () => context.push('/recipe/${recipes[i].id}'),
-                    ),
-                  ),
-                );
-              },
-              loading: () => ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: 3,
-                itemBuilder: (_, __) => const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
-                  child: RecipeCardSkeleton(),
-                ),
-              ),
-              error: (e, _) => ErrorView(
-                message: 'Search failed. Please try again.',
-                onRetry: () => ref.invalidate(recipeListProvider),
-              ),
-            ),
-          ),
+          // Default view is the full A-Z catalog; the moment a query or
+          // filter is active, this switches to normal search results —
+          // same recipeListProvider/recipeFilterProvider rules as before.
+          Expanded(child: hasSearch ? const _SearchResults() : const _AlphabeticalBrowseList()),
         ],
       ),
     );
   }
 }
 
-class _GuidedSearchOptions extends StatelessWidget {
-  const _GuidedSearchOptions();
+class _SearchResults extends ConsumerWidget {
+  const _SearchResults();
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: _GuidedOptionCard(
-              icon: Icons.child_care,
-              label: 'Search by child',
-              onTap: () => showSearchByChildSheet(context),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recipesAsync = ref.watch(recipeListProvider);
+    return recipesAsync.when(
+      data: (recipes) {
+        if (recipes.isEmpty) {
+          return const EmptyView(
+            message: 'No recipes found',
+            subMessage: 'Try adjusting your filters or search terms.',
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: recipes.length,
+          itemBuilder: (_, i) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: RecipeCard(
+              recipe: recipes[i],
+              onTap: () => context.push('/recipe/${recipes[i].id}'),
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _GuidedOptionCard(
-              icon: Icons.checklist_rtl,
-              label: 'Guided search',
-              onTap: () => context.push('/guided-search'),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _GuidedOptionCard(
-              icon: Icons.sort_by_alpha,
-              label: 'Browse A-Z',
-              onTap: () => context.push('/browse'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GuidedOptionCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _GuidedOptionCard({required this.icon, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surfaceVariant,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: AppColors.primaryDark),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
-            ],
-          ),
+        );
+      },
+      loading: () => ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 3,
+        itemBuilder: (_, __) => const Padding(
+          padding: EdgeInsets.only(bottom: 16),
+          child: RecipeCardSkeleton(),
         ),
+      ),
+      error: (e, _) => ErrorView(
+        message: 'Search failed. Please try again.',
+        onRetry: () => ref.invalidate(recipeListProvider),
+      ),
+    );
+  }
+}
+
+// Redesigned Search default view — the whole catalog, grouped A-Z, instead
+// of a flat unfiltered list. Plain sectioned scroll (not a fast-scroll side
+// index like Contacts) — fine at MVP catalog size, worth revisiting once it
+// grows.
+class _AlphabeticalBrowseList extends ConsumerWidget {
+  const _AlphabeticalBrowseList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recipesAsync = ref.watch(allRecipesAlphabeticalProvider);
+    return recipesAsync.when(
+      data: (recipes) {
+        if (recipes.isEmpty) {
+          return const EmptyView(message: 'No recipes yet', subMessage: 'Check back soon.');
+        }
+        final groups = <String, List<Recipe>>{};
+        for (final r in recipes) {
+          final first = r.title.isNotEmpty ? r.title[0].toUpperCase() : '#';
+          final letter = RegExp(r'[A-Z]').hasMatch(first) ? first : '#';
+          groups.putIfAbsent(letter, () => []).add(r);
+        }
+        final letters = groups.keys.toList()..sort();
+
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          itemCount: letters.length,
+          itemBuilder: (context, i) {
+            final letter = letters[i];
+            final items = groups[letter]!;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 8),
+                  child: Text(
+                    letter,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
+                  ),
+                ),
+                ...items.map((r) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: RecipeRowCard(recipe: r, onTap: () => context.push('/recipe/${r.id}')),
+                    )),
+              ],
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => ErrorView(
+        message: 'Could not load recipes. Check your connection.',
+        onRetry: () => ref.invalidate(allRecipesAlphabeticalProvider),
       ),
     );
   }

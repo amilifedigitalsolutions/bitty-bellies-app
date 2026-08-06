@@ -10,7 +10,6 @@ import '../../presentation/auth/screens/confirm_screen.dart';
 import '../../presentation/auth/screens/forgot_password_screen.dart';
 import '../../presentation/home/screens/home_screen.dart';
 import '../../presentation/recipe/screens/recipe_detail_screen.dart';
-import '../../presentation/search/screens/browse_all_screen.dart';
 import '../../presentation/search/screens/guided_search_wizard_screen.dart';
 import '../../presentation/search/screens/search_screen.dart';
 import '../../presentation/upload/screens/upload_recipe_screen.dart';
@@ -77,9 +76,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Settings
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
 
-      // Guided search entry points, reached from the Search screen
+      // Guided search wizard, reached from Home
       GoRoute(path: '/guided-search', builder: (_, __) => const GuidedSearchWizardScreen()),
-      GoRoute(path: '/browse', builder: (_, __) => const BrowseAllScreen()),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(child: Text('Page not found: ${state.error}')),

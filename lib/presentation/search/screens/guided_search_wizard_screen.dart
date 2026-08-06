@@ -34,7 +34,9 @@ class _GuidedSearchWizardScreenState extends ConsumerState<GuidedSearchWizardScr
           dietTypes: _dietTypes.toList(),
           excludeAllergens: _allergensToAvoid.toList(),
         ));
-    context.pop();
+    // go, not pop — this wizard is reached from Home now, so popping would
+    // land back on Home instead of showing the results it just built.
+    context.go('/search');
   }
 
   void _advance() {

@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../recipe/widgets/recipe_card.dart';
+import '../../search/widgets/guided_search_options.dart';
 import '../providers/recipe_provider.dart';
 
 // Flat, minimal top section instead of a decorative curved/gradient hero —
@@ -68,29 +69,11 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
 
-                    // Tap-through search bar — routes to the Search screen,
-                    // which owns all actual browsing/filtering.
-                    Material(
-                      color: AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(24),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(24),
-                        onTap: () => context.go('/search'),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
-                              const SizedBox(width: 10),
-                              Text(
-                                'Search recipes, ingredients, cultures...',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                    // Three entry points into Search's guided flows, in
+                    // place of a plain search bar — Search itself now
+                    // defaults to the full A-Z catalog, so "Browse A-Z"
+                    // here is just a shortcut straight to it.
+                    const GuidedSearchOptions(),
                     const SizedBox(height: 12),
 
                     // Safety disclaimer banner — flat pastel block, no
