@@ -182,7 +182,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const SizedBox(height: 8),
                         Text(
                           user != null ? "What's cooking, ${user.displayName.split(' ').first}?" : "What's cooking today?",
-                          style: Theme.of(context).textTheme.headlineLarge,
+                          // Lighter than the theme's default headlineLarge
+                          // weight (w800) — still reads as a hero line at
+                          // this size without looking shouty.
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 16),
 
@@ -266,7 +269,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             // past) the Clear button once multiple filters
                             // are active and it shows up.
                             Expanded(
-                              child: Text('Recipes other parents are loving right now', style: Theme.of(context).textTheme.headlineSmall),
+                              child: Text(
+                                'Recipes other parents are loving right now',
+                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+                              ),
                             ),
                             if (filter.hasActiveFilters)
                               TextButton(
