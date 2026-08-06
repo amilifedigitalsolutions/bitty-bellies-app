@@ -128,7 +128,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               shadowColor: Colors.black.withValues(alpha: 0.28),
               child: Container(
                 width: double.infinity,
-                color: AppColors.secondaryLight,
+                // Subtle top-to-bottom gradient within the same gold family
+                // (not a hue change) for a bit more depth/lift than a flat
+                // fill, without reopening the flat-vs-gradient decision.
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.secondaryLight, AppColors.secondary],
+                  ),
+                ),
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
@@ -138,18 +147,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Row(
                           children: [
                             const Spacer(),
-                            IconButton(
-                              icon: const Icon(Icons.search),
+                            _HeaderIconButton(
+                              icon: Icons.search,
                               onPressed: () => context.go('/search'),
                             ),
+                            const SizedBox(width: 8),
                             if (user == null)
-                              TextButton(
+                              _HeaderPillButton(
+                                label: 'Sign in',
                                 onPressed: () => context.push('/login'),
-                                child: const Text('Sign in'),
                               )
                             else
-                              IconButton(
-                                icon: const Icon(Icons.bookmark_outline),
+                              _HeaderIconButton(
+                                icon: Icons.bookmark_outline,
                                 onPressed: () => context.push('/saved'),
                               ),
                           ],
@@ -274,6 +284,60 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         label: const Text('Share recipe'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
+      ),
+    );
+  }
+}
+
+// Frosted pill button chip for header actions (search, saved, sign in) —
+// a soft light-surface circle/pill against the gold header, rather than a
+// bare icon, for the more polished "floating chip" look of the reference.
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+  const _HeaderIconButton({required this.icon, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      shape: const CircleBorder(),
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.2),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Icon(icon, color: AppColors.primaryDark, size: 20),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderPillButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+  const _HeaderPillButton({required this.label, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      shape: const StadiumBorder(),
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.2),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Text(
+            label,
+            style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+          ),
+        ),
       ),
     );
   }
