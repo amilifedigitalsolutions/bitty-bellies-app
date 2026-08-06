@@ -175,9 +175,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          user != null
-                              ? '${mealWindow.label} on your mind, ${user.displayName.split(' ').first}?'
-                              : '${mealWindow.label} on your mind?',
+                          '${mealWindow.label} on your mind?',
                           // Lighter than the theme's default headlineLarge
                           // weight (w800) — still reads as a hero line at
                           // this size without looking shouty.
