@@ -108,7 +108,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 16),
                 Text('Create account', style: Theme.of(context).textTheme.displayMedium),
                 const SizedBox(height: 8),
-                Text('Join a global community of parents.', style: Theme.of(context).textTheme.bodyLarge),
+                Text(
+                  'Join a global community of parents sharing what works in their kitchens!',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
                 const SizedBox(height: 40),
 
                 AppTextField(
