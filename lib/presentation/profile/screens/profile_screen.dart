@@ -46,16 +46,12 @@ class _GuestProfile extends StatelessWidget {
               const SizedBox(height: 24),
               Text('Join the community', style: Theme.of(context).textTheme.headlineLarge),
               const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Sign in to:', style: Theme.of(context).textTheme.titleMedium),
-              ),
-              const SizedBox(height: 12),
               const _FeatureBullet('Save your favorite recipes to come back to anytime'),
               const _FeatureBullet('Share your own recipes with parents around the world'),
               const _FeatureBullet("Organize recipes into folders for each of your children"),
               const _FeatureBullet("Get recipe ideas matched to your child's age"),
               const _FeatureBullet("Rate and comment on recipes you've tried"),
+              const _FeatureBullet('...and so much more!'),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () => context.push('/login'),
