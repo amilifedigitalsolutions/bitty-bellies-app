@@ -17,12 +17,15 @@ class RegisterScreen extends ConsumerStatefulWidget {
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
+  DateTime? _birthdate;
   // Default-unchecked, not pre-ticked — explicit opt-in rather than
   // opt-out, both as good practice and because it's what we told AWS SES
   // we do when requesting production sending access.
@@ -31,10 +34,30 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickBirthdate(ValueChanged<DateTime> onPicked) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _birthdate ?? DateTime(now.year - 30, now.month, now.day),
+      firstDate: DateTime(now.year - 120),
+      // Requires the account holder to be at least 13 — a reasonable
+      // minimum-age default for account creation, not explicitly
+      // requested but standard practice once a birthdate is collected.
+      lastDate: DateTime(now.year - 13, now.month, now.day),
+      helpText: 'Your birthdate',
+    );
+    if (picked != null) {
+      setState(() => _birthdate = picked);
+      onPicked(picked);
+    }
   }
 
   void _showAlreadyExistsDialog(String email) {
@@ -64,7 +87,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    // FormField's own validator covers "not picked at all" (see
+    // _formKey.currentState!.validate() below), but re-checked here too
+    // since the value itself is needed to actually call signUp.
+    if (!_formKey.currentState!.validate() || _birthdate == null) return;
     setState(() { _isLoading = true; _errorMessage = null; });
 
     final email = _emailCtrl.text.trim();
@@ -72,6 +98,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       email: email,
       password: _passwordCtrl.text,
       displayName: _nameCtrl.text.trim(),
+      firstName: _firstNameCtrl.text.trim(),
+      lastName: _lastNameCtrl.text.trim(),
+      birthdate: _birthdate!,
       marketingOptIn: _marketingOptIn,
     );
 
@@ -124,6 +153,54 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     if (v.trim().length < 2) return 'Must be at least 2 characters';
                     return null;
                   },
+                ),
+                const SizedBox(height: 16),
+
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        controller: _firstNameCtrl,
+                        label: 'First name',
+                        textInputAction: TextInputAction.next,
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: AppTextField(
+                        controller: _lastNameCtrl,
+                        label: 'Last name',
+                        textInputAction: TextInputAction.next,
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                FormField<DateTime>(
+                  initialValue: _birthdate,
+                  validator: (v) => v == null ? 'Birthdate is required' : null,
+                  builder: (field) => InkWell(
+                    onTap: () => _pickBirthdate(field.didChange),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Birthdate',
+                        suffixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
+                        errorText: field.errorText,
+                      ),
+                      child: Text(
+                        _birthdate == null
+                            ? 'Tap to select a date'
+                            : '${_birthdate!.year}-${_birthdate!.month.toString().padLeft(2, '0')}-${_birthdate!.day.toString().padLeft(2, '0')}',
+                        style: _birthdate == null
+                            ? TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)
+                            : null,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
 

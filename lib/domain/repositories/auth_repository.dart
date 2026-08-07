@@ -7,6 +7,9 @@ abstract class AuthRepository {
     required String email,
     required String password,
     required String displayName,
+    required String firstName,
+    required String lastName,
+    required DateTime birthdate,
     bool marketingOptIn = false,
   });
 

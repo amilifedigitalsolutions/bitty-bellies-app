@@ -38,9 +38,25 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserProfile?>> {
     );
   }
 
-  Future<void> signUp({required String email, required String password, required String displayName}) async {
+  Future<void> signUp({
+    required String email,
+    required String password,
+    required String displayName,
+    required String firstName,
+    required String lastName,
+    required DateTime birthdate,
+    bool marketingOptIn = false,
+  }) async {
     state = const AsyncValue.loading();
-    final result = await _repo.signUp(email: email, password: password, displayName: displayName);
+    final result = await _repo.signUp(
+      email: email,
+      password: password,
+      displayName: displayName,
+      firstName: firstName,
+      lastName: lastName,
+      birthdate: birthdate,
+      marketingOptIn: marketingOptIn,
+    );
     state = result.when(
       success: (user) => AsyncValue.data(null), // wait for confirm
       failure: (e) => AsyncValue.error(e, StackTrace.current),

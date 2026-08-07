@@ -23,6 +23,9 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
     required String displayName,
+    required String firstName,
+    required String lastName,
+    required DateTime birthdate,
     bool marketingOptIn = false,
   }) async {
     try {
@@ -32,6 +35,13 @@ class AuthRepositoryImpl implements AuthRepository {
         options: SignUpOptions(userAttributes: {
           CognitoUserAttributeKey.email: email,
           CognitoUserAttributeKey.name: displayName,
+          CognitoUserAttributeKey.givenName: firstName,
+          CognitoUserAttributeKey.familyName: lastName,
+          // Cognito's birthdate attribute is a plain date string (no time
+          // component), same YYYY-MM-DD convention already used for
+          // Child.birthdate elsewhere in this app.
+          CognitoUserAttributeKey.birthdate:
+              '${birthdate.year.toString().padLeft(4, '0')}-${birthdate.month.toString().padLeft(2, '0')}-${birthdate.day.toString().padLeft(2, '0')}',
           // Read by WelcomeEmailLambda's Post Confirmation trigger to
           // decide whether to add this user to the SES marketing contact
           // list — Cognito custom attributes are always strings on the
@@ -154,6 +164,16 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  // Null (not empty string) when the attribute isn't set — pre-existing
+  // Cognito users signed up before given_name/family_name/birthdate were
+  // collected won't have them.
+  String? _attrValue(List<AuthUserAttribute> attrs, CognitoUserAttributeKey key) {
+    final match = attrs.where((a) => a.userAttributeKey == key);
+    if (match.isEmpty) return null;
+    final value = match.first.value;
+    return value.isEmpty ? null : value;
+  }
+
   @override
   Future<Result<UserProfile?>> getCurrentUser() async {
     try {
@@ -169,7 +189,14 @@ class AuthRepositoryImpl implements AuthRepository {
         (a) => a.userAttributeKey == CognitoUserAttributeKey.name,
         orElse: () => const AuthUserAttribute(userAttributeKey: CognitoUserAttributeKey.name, value: 'User'),
       ).value;
-      return Success(await _ensureUserProfile(id: user.userId, email: email, displayName: name));
+      return Success(await _ensureUserProfile(
+        id: user.userId,
+        email: email,
+        displayName: name,
+        firstName: _attrValue(attrs, CognitoUserAttributeKey.givenName),
+        lastName: _attrValue(attrs, CognitoUserAttributeKey.familyName),
+        birthdate: _attrValue(attrs, CognitoUserAttributeKey.birthdate),
+      ));
     } on SignedOutException {
       return const Success(null);
     } catch (_) {
@@ -301,6 +328,9 @@ class AuthRepositoryImpl implements AuthRepository {
     required String id,
     required String email,
     required String displayName,
+    String? firstName,
+    String? lastName,
+    String? birthdate,
   }) async {
     try {
       final getRequest = GraphQLRequest<String>(
@@ -321,6 +351,9 @@ class AuthRepositoryImpl implements AuthRepository {
             'id': id,
             'displayName': displayName,
             'email': email,
+            if (firstName != null) 'firstName': firstName,
+            if (lastName != null) 'lastName': lastName,
+            if (birthdate != null) 'birthdate': birthdate,
             'createdAt': DateTime.now().toUtc().toIso8601String(),
           },
         },

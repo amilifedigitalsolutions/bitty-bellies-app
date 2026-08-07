@@ -5,6 +5,10 @@ class UserProfile extends Equatable {
   final String id;           // Cognito sub / userId
   final String displayName;
   final String email;
+  // Nullable: profiles created before these fields existed won't have them.
+  final String? firstName;
+  final String? lastName;
+  final DateTime? birthdate;
   final String? bio;
   final String? avatarUrl;
   final String? country;
@@ -25,6 +29,9 @@ class UserProfile extends Equatable {
     required this.id,
     required this.displayName,
     required this.email,
+    this.firstName,
+    this.lastName,
+    this.birthdate,
     this.bio,
     this.avatarUrl,
     this.country,
@@ -80,6 +87,9 @@ class UserProfile extends Equatable {
         id: json['id'] as String,
         displayName: json['displayName'] as String,
         email: json['email'] as String,
+        firstName: json['firstName'] as String?,
+        lastName: json['lastName'] as String?,
+        birthdate: json['birthdate'] != null ? DateTime.parse(json['birthdate'] as String) : null,
         bio: json['bio'] as String?,
         avatarUrl: json['avatarUrl'] as String?,
         country: json['country'] as String?,
@@ -104,6 +114,9 @@ class UserProfile extends Equatable {
         'id': id,
         'displayName': displayName,
         'email': email,
+        'firstName': firstName,
+        'lastName': lastName,
+        'birthdate': birthdate != null ? _dateOnly(birthdate!) : null,
         'bio': bio,
         'avatarUrl': avatarUrl,
         'country': country,
@@ -123,4 +136,7 @@ class UserProfile extends Equatable {
 
   @override
   List<Object?> get props => [id, displayName, email];
+
+  static String _dateOnly(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }

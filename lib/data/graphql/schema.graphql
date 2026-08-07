@@ -2,6 +2,12 @@ type UserProfile {
   id: ID!
   displayName: String!
   email: AWSEmail!
+  # Nullable despite always being collected at sign-up going forward —
+  # profiles created before this field existed won't have them, and
+  # DynamoDB has no migration step to backfill old records.
+  firstName: String
+  lastName: String
+  birthdate: AWSDate
   bio: String
   avatarUrl: AWSURL
   country: String
@@ -245,6 +251,14 @@ input CreateUserProfileInput {
   id: ID
   displayName: String!
   email: AWSEmail!
+  # Not required at the schema level despite the sign-up UI always
+  # collecting them going forward — a pre-existing Cognito user (from
+  # before this field existed) whose profile hasn't been created yet
+  # would have no given_name/family_name/birthdate to send, and a
+  # required field here would hard-fail that mutation.
+  firstName: String
+  lastName: String
+  birthdate: AWSDate
   bio: String
   avatarUrl: AWSURL
   country: String
@@ -258,6 +272,9 @@ input CreateUserProfileInput {
 input UpdateUserProfileInput {
   id: ID!
   displayName: String
+  firstName: String
+  lastName: String
+  birthdate: AWSDate
   bio: String
   avatarUrl: AWSURL
   country: String
