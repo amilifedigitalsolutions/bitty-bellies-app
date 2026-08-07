@@ -189,7 +189,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           child: Padding(
                             padding: const EdgeInsets.only(top: 12),
                             child: Text(
-                              'Send me recipe inspiration & app updates by email',
+                              'Send me recipe inspiration, brand promotions, & app updates by email',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ),

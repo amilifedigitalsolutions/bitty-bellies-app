@@ -837,7 +837,7 @@ $util.qr($values.put("parentId", $ctx.identity.sub))
       topics: [
         {
           topicName: 'product-updates',
-          displayName: 'Recipe inspiration & app updates',
+          displayName: 'Recipe inspiration, brand promotions, & app updates',
           description: 'New recipes, features, and occasional announcements from Bitty Bellies.',
           defaultSubscriptionStatus: 'OPT_IN',
         },
