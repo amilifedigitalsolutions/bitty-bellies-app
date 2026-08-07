@@ -40,8 +40,9 @@ class _GuestProfile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Real logo instead of a generic person icon — same fix
-              // already applied to the splash and sign-up screens.
-              Image.asset('assets/logos/logo-long.png', height: 64, fit: BoxFit.contain),
+              // already applied to the splash and sign-up screens. Matches
+              // the Search screen's logo size (52) for consistency.
+              Image.asset('assets/logos/logo-long.png', height: 52, fit: BoxFit.contain),
               const SizedBox(height: 24),
               Text('Join the community', style: Theme.of(context).textTheme.headlineLarge),
               const SizedBox(height: 8),
@@ -112,7 +113,7 @@ class _AuthenticatedProfileState extends ConsumerState<_AuthenticatedProfile>
                 children: [
                   Align(
                     alignment: Alignment.center,
-                    child: Image.asset('assets/logos/logo-long.png', height: 68, fit: BoxFit.contain),
+                    child: Image.asset('assets/logos/logo-long.png', height: 52, fit: BoxFit.contain),
                   ),
                   const SizedBox(height: 20),
                   Row(

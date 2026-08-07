@@ -75,7 +75,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 16),
                 Text('Welcome back', style: Theme.of(context).textTheme.displayMedium),
                 const SizedBox(height: 8),
-                Text('Sign in to save and share recipes.', style: Theme.of(context).textTheme.bodyLarge),
+                Text(
+                  'Sign in to see your saved recipes, share your own, or find creative meal ideas from parents all over the world.',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
                 const SizedBox(height: 40),
 
                 AppTextField(
