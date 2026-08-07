@@ -39,22 +39,61 @@ class _GuestProfile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.person_outline, size: 72, color: AppColors.border),
+              // Real logo instead of a generic person icon — same fix
+              // already applied to the splash and sign-up screens. Matches
+              // the Search screen's logo size (52) for consistency.
+              Image.asset('assets/logos/logo-long.png', height: 52, fit: BoxFit.contain),
               const SizedBox(height: 24),
-              Text('Your profile', style: Theme.of(context).textTheme.headlineLarge),
-              const SizedBox(height: 8),
-              Text(
-                'Sign in to save recipes, share your creations, and connect with the community.',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
+              Text('Join the community', style: Theme.of(context).textTheme.headlineLarge),
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Sign in to:', style: Theme.of(context).textTheme.titleMedium),
               ),
-              const SizedBox(height: 32),
-              ElevatedButton(onPressed: () => context.push('/login'), child: const Text('Sign in')),
               const SizedBox(height: 12),
-              OutlinedButton(onPressed: () => context.push('/register'), child: const Text('Create account')),
+              const _FeatureBullet('Save your favorite recipes to come back to anytime'),
+              const _FeatureBullet('Share your own recipes with parents around the world'),
+              const _FeatureBullet("Organize recipes into folders for each of your children"),
+              const _FeatureBullet("Get recipe ideas matched to your child's age"),
+              const _FeatureBullet("Rate and comment on recipes you've tried"),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => context.push('/login'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.logoBlue),
+                child: const Text('Sign in'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => context.push('/register'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.logoBlue,
+                  side: const BorderSide(color: AppColors.logoBlue, width: 1.5),
+                ),
+                child: const Text('Create account'),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FeatureBullet extends StatelessWidget {
+  final String text;
+  const _FeatureBullet(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.check_circle, size: 18, color: AppColors.logoBlue),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: Theme.of(context).textTheme.bodyMedium)),
+        ],
       ),
     );
   }
@@ -99,7 +138,7 @@ class _AuthenticatedProfileState extends ConsumerState<_AuthenticatedProfile>
                 children: [
                   Align(
                     alignment: Alignment.center,
-                    child: Image.asset('assets/logos/logo-long.png', height: 68, fit: BoxFit.contain),
+                    child: Image.asset('assets/logos/logo-long.png', height: 52, fit: BoxFit.contain),
                   ),
                   const SizedBox(height: 20),
                   Row(
