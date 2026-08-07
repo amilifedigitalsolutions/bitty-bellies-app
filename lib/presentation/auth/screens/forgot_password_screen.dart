@@ -61,7 +61,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reset password')),
+      // Bare back-button AppBar (no title) — the logo + heading below
+      // carries the branding instead, matching the other auth screens.
+      appBar: AppBar(),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -70,6 +72,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Image.asset('assets/logos/logo-long.png', height: 48, fit: BoxFit.contain),
+                const SizedBox(height: 16),
+                Text('Reset password', style: Theme.of(context).textTheme.displayMedium),
+                const SizedBox(height: 8),
+                Text(
+                  _codeSent
+                      ? 'Enter the code we sent you and choose a new password.'
+                      : "We'll email you a code to reset your password.",
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 40),
+
                 AppTextField(
                   controller: _emailCtrl,
                   label: 'Email address',
@@ -105,6 +119,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _isLoading ? null : (_codeSent ? _resetPassword : _sendCode),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.logoBlue),
                   child: _isLoading
                       ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : Text(_codeSent ? 'Set new password' : 'Send reset code'),

@@ -39,19 +39,32 @@ class _GuestProfile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.person_outline, size: 72, color: AppColors.border),
+              // Real logo instead of a generic person icon — same fix
+              // already applied to the splash and sign-up screens.
+              Image.asset('assets/logos/logo-long.png', height: 64, fit: BoxFit.contain),
               const SizedBox(height: 24),
-              Text('Your profile', style: Theme.of(context).textTheme.headlineLarge),
+              Text('Join the community', style: Theme.of(context).textTheme.headlineLarge),
               const SizedBox(height: 8),
               Text(
-                'Sign in to save recipes, share your creations, and connect with the community.',
+                'Sign in to save recipes, share your creations, and connect with parents like you.',
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              ElevatedButton(onPressed: () => context.push('/login'), child: const Text('Sign in')),
+              ElevatedButton(
+                onPressed: () => context.push('/login'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.logoBlue),
+                child: const Text('Sign in'),
+              ),
               const SizedBox(height: 12),
-              OutlinedButton(onPressed: () => context.push('/register'), child: const Text('Create account')),
+              OutlinedButton(
+                onPressed: () => context.push('/register'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.logoBlue,
+                  side: const BorderSide(color: AppColors.logoBlue, width: 1.5),
+                ),
+                child: const Text('Create account'),
+              ),
             ],
           ),
         ),

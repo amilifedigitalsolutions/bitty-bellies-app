@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_text_field.dart';
-import '../../../core/widgets/auth_header_icon.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -69,7 +68,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 32),
-                const AuthHeaderIcon(Icons.waving_hand_outlined),
+                // Real logo instead of the generic icon badge — same fix
+                // already applied to sign-up and the signed-out Profile
+                // screen.
+                Image.asset('assets/logos/logo-long.png', height: 48, fit: BoxFit.contain),
                 const SizedBox(height: 16),
                 Text('Welcome back', style: Theme.of(context).textTheme.displayMedium),
                 const SizedBox(height: 8),
@@ -135,6 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.logoBlue),
                   child: _isLoading
                       ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Text('Sign in'),
