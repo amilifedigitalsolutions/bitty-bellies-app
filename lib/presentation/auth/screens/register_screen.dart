@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_text_field.dart';
-import '../../../core/widgets/auth_header_icon.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -97,7 +96,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 32),
-                const AuthHeaderIcon(Icons.person_add_alt_outlined),
+                // Real logo instead of the generic icon badge the other
+                // auth screens use — sign-up is the first real branding
+                // moment for a new user.
+                Image.asset('assets/logos/logo-long.png', height: 48, fit: BoxFit.contain),
                 const SizedBox(height: 16),
                 Text('Create account', style: Theme.of(context).textTheme.displayMedium),
                 const SizedBox(height: 8),

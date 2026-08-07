@@ -17,28 +17,20 @@ class SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // White backdrop card, same fix as the Home header — the logo's
+            // wordmark/icon colors don't read well directly against a
+            // saturated background. The logo image already is the full
+            // "Bitty Bellies" wordmark lockup, so there's no separate app
+            // name text alongside it.
             Container(
-              width: 100,
-              height: 100,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(28),
               ),
-              child: const Center(
-                child: Text('🥦', style: TextStyle(fontSize: 56)),
-              ),
+              child: Image.asset('assets/logos/logo-long.png', height: 64, fit: BoxFit.contain),
             ),
             const SizedBox(height: 24),
-            const Text(
-              AppConstants.appName,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.w800,
-                fontFamily: 'Nunito',
-              ),
-            ),
-            const SizedBox(height: 8),
             Text(
               AppConstants.appTagline,
               style: TextStyle(
