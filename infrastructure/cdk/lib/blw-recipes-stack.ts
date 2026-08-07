@@ -26,6 +26,12 @@ export class BlwRecipesStack extends cdk.Stack {
         email: { required: true, mutable: true },
         fullname: { required: true, mutable: true },
       },
+      // Set by the client at sign-up time from a (default-unchecked) opt-in
+      // checkbox — read by WelcomeEmailLambda below to decide whether to
+      // add the new user to the marketing contact list.
+      customAttributes: {
+        marketingOptIn: new cognito.BooleanAttribute({ mutable: true }),
+      },
       passwordPolicy: {
         minLength: 8,
         requireLowercase: true,
@@ -819,6 +825,25 @@ $util.qr($values.put("parentId", $ctx.identity.sub))
       identity: ses.Identity.domain('bittybellies.com'),
     });
 
+    // Marketing contact list — populated from the sign-up opt-in checkbox,
+    // not the SES sandbox/production-access identity above. Modeled with a
+    // topic (rather than a flat list) from the start, so future campaigns
+    // (e.g. "new recipes" vs. "product announcements") can layer in without
+    // restructuring; today sign-up only offers the one topic.
+    const subscribersListName = 'bitty-bellies-subscribers';
+    const subscribersList = new ses.CfnContactList(this, 'SubscribersList', {
+      contactListName: subscribersListName,
+      description: 'Users who opted in to marketing email at sign-up.',
+      topics: [
+        {
+          topicName: 'product-updates',
+          displayName: 'Recipe inspiration & app updates',
+          description: 'New recipes, features, and occasional announcements from Bitty Bellies.',
+          defaultSubscriptionStatus: 'OPT_IN',
+        },
+      ],
+    });
+
     // Lambda for email sharing
     const emailLambda = new lambda.Function(this, 'EmailShareLambda', {
       runtime: lambda.Runtime.NODEJS_18_X,
@@ -866,12 +891,15 @@ $util.qr($values.put("parentId", $ctx.identity.sub))
       handler: 'index.handler',
       code: lambda.Code.fromInline(`
         const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
+        const { SESv2Client, CreateContactCommand } = require('@aws-sdk/client-sesv2');
         const ses = new SESClient({ region: process.env.AWS_REGION });
+        const sesv2 = new SESv2Client({ region: process.env.AWS_REGION });
 
         exports.handler = async (event) => {
+          const email = event.request.userAttributes.email;
+          const name = event.request.userAttributes.name || 'there';
+
           try {
-            const email = event.request.userAttributes.email;
-            const name = event.request.userAttributes.name || 'there';
             await ses.send(new SendEmailCommand({
               Source: process.env.FROM_EMAIL,
               Destination: { ToAddresses: [email] },
@@ -886,11 +914,31 @@ $util.qr($values.put("parentId", $ctx.identity.sub))
           } catch (err) {
             console.error('Failed to send welcome email', err);
           }
+
+          // Sign-up's opt-in checkbox — Cognito custom attributes always
+          // arrive as strings, so this is a literal 'true' check, not a
+          // boolean. Also wrapped separately in its own try/catch: a
+          // failure here should never take down the welcome email above,
+          // or the sign-up confirmation itself.
+          if (event.request.userAttributes['custom:marketingOptIn'] === 'true') {
+            try {
+              await sesv2.send(new CreateContactCommand({
+                ContactListName: process.env.CONTACT_LIST_NAME,
+                EmailAddress: email,
+                TopicPreferences: [{ TopicName: 'product-updates', SubscriptionStatus: 'OPT_IN' }],
+                UnsubscribeAll: false,
+              }));
+            } catch (err) {
+              console.error('Failed to add contact to marketing list', err);
+            }
+          }
+
           return event;
         };
       `),
       environment: {
         FROM_EMAIL: 'welcome@bittybellies.com',
+        CONTACT_LIST_NAME: subscribersListName,
       },
     });
 
@@ -899,6 +947,22 @@ $util.qr($values.put("parentId", $ctx.identity.sub))
       actions: ['ses:SendEmail', 'ses:SendRawEmail'],
       resources: ['*'],
     }));
+
+    // AWS::SES::ContactList has no CloudFormation-generated ARN attribute
+    // (its reference type only exposes contactListName), so it's built by
+    // hand following SES's documented contact-list ARN format.
+    const subscribersListArn = `arn:${cdk.Aws.PARTITION}:ses:${this.region}:${this.account}:contact-list/${subscribersListName}`;
+
+    welcomeEmailLambda.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['ses:CreateContact', 'ses:PutContact'],
+      resources: [subscribersListArn],
+    }));
+    // Ensures the contact list exists before the Lambda that references its
+    // name/ARN is created — CDK doesn't infer this dependency automatically
+    // since the reference is inside an inline string template, not a typed
+    // CDK token passed directly into a construct prop it tracks.
+    welcomeEmailLambda.node.addDependency(subscribersList);
 
     userPool.addTrigger(cognito.UserPoolOperation.POST_CONFIRMATION, welcomeEmailLambda);
 

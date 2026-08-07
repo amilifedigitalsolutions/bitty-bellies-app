@@ -23,6 +23,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
+  // Default-unchecked, not pre-ticked — explicit opt-in rather than
+  // opt-out, both as good practice and because it's what we told AWS SES
+  // we do when requesting production sending access.
+  bool _marketingOptIn = false;
 
   @override
   void dispose() {
@@ -68,6 +72,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       email: email,
       password: _passwordCtrl.text,
       displayName: _nameCtrl.text.trim(),
+      marketingOptIn: _marketingOptIn,
     );
 
     if (!mounted) return;
@@ -162,7 +167,38 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+
+                // Opt-in checkbox, not a hidden default — feeds the
+                // marketingOptIn Cognito attribute, which WelcomeEmailLambda
+                // reads to decide whether to add this user to the SES
+                // marketing contact list.
+                InkWell(
+                  onTap: () => setState(() => _marketingOptIn = !_marketingOptIn),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Checkbox(
+                          value: _marketingOptIn,
+                          onChanged: (v) => setState(() => _marketingOptIn = v ?? false),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Text(
+                              'Send me recipe inspiration & app updates by email',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
 
                 if (_errorMessage != null) ...[
                   Container(

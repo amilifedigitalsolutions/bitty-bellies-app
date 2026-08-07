@@ -7,6 +7,7 @@ abstract class AuthRepository {
     required String email,
     required String password,
     required String displayName,
+    bool marketingOptIn = false,
   });
 
   Future<Result<UserProfile>> signIn({

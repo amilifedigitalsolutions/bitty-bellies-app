@@ -23,6 +23,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
     required String displayName,
+    bool marketingOptIn = false,
   }) async {
     try {
       await Amplify.Auth.signUp(
@@ -31,6 +32,11 @@ class AuthRepositoryImpl implements AuthRepository {
         options: SignUpOptions(userAttributes: {
           CognitoUserAttributeKey.email: email,
           CognitoUserAttributeKey.name: displayName,
+          // Read by WelcomeEmailLambda's Post Confirmation trigger to
+          // decide whether to add this user to the SES marketing contact
+          // list — Cognito custom attributes are always strings on the
+          // wire, hence 'true'/'false' rather than a real bool.
+          CognitoUserAttributeKey.custom('marketingOptIn'): marketingOptIn.toString(),
         }),
       );
 
