@@ -16,6 +16,10 @@ class AppColors {
   static const Color secondaryDark = Color(0xFFBF8E43);
   static const Color accent = Color(0xFF8454B4);       // signature purple
   static const Color accentLight = Color(0xFFC8B2DD);
+  // Sampled directly from the wordmark text in assets/logos/logo-long.png —
+  // distinct from `primary` (which comes from a different element of the
+  // logo, its small "signature" mark, not the main wordmark itself).
+  static const Color logoBlue = Color(0xFF0CC0DF);
   // Warmer and more differentiated than the previous near-white pair —
   // background reads as a genuine warm cream rather than off-white, and
   // surface (cards) sits a step lighter than background so cards read as

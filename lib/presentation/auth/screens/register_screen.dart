@@ -178,6 +178,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
+                  // Matches the logo's own wordmark blue rather than the
+                  // theme's default button blue-violet.
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.logoBlue),
                   child: _isLoading
                       ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Text('Create account'),
