@@ -45,12 +45,17 @@ class _GuestProfile extends StatelessWidget {
               Image.asset('assets/logos/logo-long.png', height: 52, fit: BoxFit.contain),
               const SizedBox(height: 24),
               Text('Join the community', style: Theme.of(context).textTheme.headlineLarge),
-              const SizedBox(height: 8),
-              Text(
-                'Sign in to save recipes, share your creations, and connect with parents like you.',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Sign in to:', style: Theme.of(context).textTheme.titleMedium),
               ),
+              const SizedBox(height: 12),
+              const _FeatureBullet('Save your favorite recipes to come back to anytime'),
+              const _FeatureBullet('Share your own recipes with parents around the world'),
+              const _FeatureBullet("Organize recipes into folders for each of your children"),
+              const _FeatureBullet("Get recipe ideas matched to your child's age"),
+              const _FeatureBullet("Rate and comment on recipes you've tried"),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () => context.push('/login'),
@@ -69,6 +74,26 @@ class _GuestProfile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FeatureBullet extends StatelessWidget {
+  final String text;
+  const _FeatureBullet(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.check_circle, size: 18, color: AppColors.logoBlue),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: Theme.of(context).textTheme.bodyMedium)),
+        ],
       ),
     );
   }

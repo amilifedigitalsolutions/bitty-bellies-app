@@ -76,7 +76,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Text('Welcome back', style: Theme.of(context).textTheme.displayMedium),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign in to see your saved recipes, share your own, or find creative meal ideas from parents all over the world.',
+                  'Sign in to find creative meal ideas for your bitty bellies — shared by parents all over the world.',
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 40),
