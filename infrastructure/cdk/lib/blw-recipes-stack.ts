@@ -804,14 +804,20 @@ $util.qr($values.put("parentId", $ctx.identity.sub))
     });
 
     // ──────────────────────────────────────────────────────────────────────
-    // SES — Email sharing
+    // SES — Email sending
     // ──────────────────────────────────────────────────────────────────────
 
-    // NOTE: Domain verification must be done in SES console before emails send.
-    // Replace 'yourdomain.com' with your actual sender domain.
-    // new ses.EmailIdentity(this, 'SESIdentity', {
-    //   identity: ses.Identity.domain('yourdomain.com'),
-    // });
+    // Easy DKIM domain identity — deploying this does NOT make sending work
+    // by itself. AWS generates 3 DKIM CNAME records (output below as
+    // SESDkimRecords) that must be added to bittybellies.com's DNS; the
+    // domain shows as "pending" in the SES console until those propagate
+    // and AWS verifies them. Also note: a new SES account starts in
+    // sandbox mode (can only send to individually-verified recipient
+    // addresses) until production access is requested via AWS Support —
+    // that's a separate, manual step, not something CDK can do.
+    const sesIdentity = new ses.EmailIdentity(this, 'SESIdentity', {
+      identity: ses.Identity.domain('bittybellies.com'),
+    });
 
     // Lambda for email sharing
     const emailLambda = new lambda.Function(this, 'EmailShareLambda', {
@@ -838,7 +844,7 @@ $util.qr($values.put("parentId", $ctx.identity.sub))
         };
       `),
       environment: {
-        FROM_EMAIL: 'noreply@yourdomain.com', // update with verified SES email
+        FROM_EMAIL: 'noreply@bittybellies.com',
       },
     });
 
@@ -847,6 +853,54 @@ $util.qr($values.put("parentId", $ctx.identity.sub))
       actions: ['ses:SendEmail', 'ses:SendRawEmail'],
       resources: ['*'],
     }));
+
+    // Cognito Post Confirmation trigger — fires right after a new user
+    // confirms their email, so this is genuinely "as soon as they sign up"
+    // rather than on every sign-in. Must always return `event` unmodified;
+    // Cognito uses the return value to continue the auth flow, so a thrown
+    // error here would block the user's account confirmation entirely —
+    // the SES send is wrapped in try/catch specifically so a failed welcome
+    // email can never fail someone's sign-up.
+    const welcomeEmailLambda = new lambda.Function(this, 'WelcomeEmailLambda', {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromInline(`
+        const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
+        const ses = new SESClient({ region: process.env.AWS_REGION });
+
+        exports.handler = async (event) => {
+          try {
+            const email = event.request.userAttributes.email;
+            const name = event.request.userAttributes.name || 'there';
+            await ses.send(new SendEmailCommand({
+              Source: process.env.FROM_EMAIL,
+              Destination: { ToAddresses: [email] },
+              Message: {
+                Subject: { Data: 'Welcome to Bitty Bellies!' },
+                Body: {
+                  Text: { Data: \`Hi \${name},\\n\\nWelcome to Bitty Bellies -- real recipes, from real parents, just like you.\\n\\nExplore baby-led weaning recipes shared by parents around the world, or share your own favorite.\\n\\nHappy feeding!\\nThe Bitty Bellies team\` },
+                  Html: { Data: \`<p>Hi \${name},</p><p>Welcome to Bitty Bellies &mdash; real recipes, from real parents, just like you.</p><p>Explore baby-led weaning recipes shared by parents around the world, or share your own favorite.</p><p>Happy feeding!<br/>The Bitty Bellies team</p>\` }
+                }
+              }
+            }));
+          } catch (err) {
+            console.error('Failed to send welcome email', err);
+          }
+          return event;
+        };
+      `),
+      environment: {
+        FROM_EMAIL: 'welcome@bittybellies.com',
+      },
+    });
+
+    welcomeEmailLambda.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['ses:SendEmail', 'ses:SendRawEmail'],
+      resources: ['*'],
+    }));
+
+    userPool.addTrigger(cognito.UserPoolOperation.POST_CONFIRMATION, welcomeEmailLambda);
 
     // ──────────────────────────────────────────────────────────────────────
     // Stack outputs
@@ -859,5 +913,13 @@ $util.qr($values.put("parentId", $ctx.identity.sub))
     new cdk.CfnOutput(this, 'AppSyncApiId', { value: api.apiId });
     new cdk.CfnOutput(this, 'S3BucketName', { value: mediaBucket.bucketName });
     new cdk.CfnOutput(this, 'Region', { value: this.region });
+
+    // Add these 3 as CNAME records on bittybellies.com's DNS after deploy —
+    // SES shows the domain as "verified" once they've propagated and AWS
+    // has checked them (can take up to 72h, usually much faster).
+    sesIdentity.dkimRecords.forEach((record, i) => {
+      new cdk.CfnOutput(this, `SESDkimRecord${i + 1}Name`, { value: record.name });
+      new cdk.CfnOutput(this, `SESDkimRecord${i + 1}Value`, { value: record.value });
+    });
   }
 }
