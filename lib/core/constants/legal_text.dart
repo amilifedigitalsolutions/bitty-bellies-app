@@ -11,7 +11,7 @@ class LegalText {
   static const String privacyPolicy = '''
 Last updated: $lastUpdated
 
-Bitty Bellies ("we", "us", "our") provides a mobile app where parents and caregivers can discover, save, and share baby- and toddler-friendly recipes. This policy explains what information we collect, how we use it, and the choices you have.
+Bitty Bellies ("we", "us", "our") is a product of AmiLife Digital Solutions and provides a mobile app where parents and caregivers can discover, save, and share baby- and toddler-friendly recipes. This policy explains what information we collect, how we use it, and the choices you have.
 
 1. Information We Collect
 
@@ -65,7 +65,7 @@ Questions about this policy? Email us at support@bittybellies.com.
   static const String termsOfService = '''
 Last updated: $lastUpdated
 
-These Terms of Service ("Terms") govern your use of the Bitty Bellies app. By creating an account, you agree to these Terms.
+These Terms of Service ("Terms") govern your use of the Bitty Bellies app, a product of AmiLife Digital Solutions. By creating an account, you agree to these Terms.
 
 1. Eligibility
 
