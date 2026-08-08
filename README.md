@@ -275,6 +275,49 @@ To seed these into DynamoDB, use the AWS CLI or write a Lambda seeder.
 
 ---
 
+## Production Readiness Backlog (2026-08-07 audit)
+
+Blockers — app store submission cannot proceed without these:
+
+- [ ] **SES production access** — account is still in sandbox (`ProductionAccessEnabled: false`); welcome/marketing emails only reach verified addresses until AWS approves the support case.
+- [ ] **Real Privacy Policy & Terms of Service** — Settings screen's tiles and the Register screen's consent text are non-functional stubs (`onTap: () {}`); both app stores require a working, reachable privacy policy.
+
+Data durability:
+
+- [ ] Point-in-time recovery on the remaining DynamoDB tables (`CommentsTable`, `FeedbackTable`, `ReportsTable`, `SavedRecipesTable`, `ChildFoldersTable`, `MonetizationTable` — only `RecipesTable`/`UsersTable` have it today)
+
+Content safety:
+
+- [ ] Reviewer/moderator workflow to actually act on `ReportsTable` submissions (reports are captured but nothing reads them)
+
+Testing & CI:
+
+- [ ] Real unit/widget/integration test coverage (only the Flutter-generated boilerplate exists today)
+- [ ] CI pipeline (`.github/workflows` is empty — `flutter analyze`/builds are all manual)
+
+Observability:
+
+- [ ] Crash reporting (Sentry or Firebase Crashlytics)
+- [ ] Analytics provider wired into `analytics_service.dart` (currently a `TODO`)
+- [ ] CloudWatch alarms on Lambdas / DynamoDB throttling / AppSync errors
+
+Environments:
+
+- [ ] Dev/staging AWS environment separate from the current single "everything is prod" setup
+
+Store submission:
+
+- [ ] App Store / Play Store listing assets (screenshots, description, keywords) and a release pipeline (e.g. fastlane)
+
+Other:
+
+- [ ] Accessibility pass (`Semantics()` unused anywhere in `lib/`)
+- [ ] Offline/connectivity handling beyond what's in `main.dart`
+- [ ] Rate limiting / abuse prevention on upload and comment mutations
+- [ ] Remove leftover `TODO` in `recipe_repository_impl.dart:474` (real API Gateway call once Lambda is deployed)
+
+---
+
 ## Handoff Notes
 
 - The repo is structured for clean handoff. Each vertical (auth, home, recipe, upload, profile) is self-contained in `presentation/`.

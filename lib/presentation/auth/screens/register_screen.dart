@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -30,6 +31,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // opt-out, both as good practice and because it's what we told AWS SES
   // we do when requesting production sending access.
   bool _marketingOptIn = false;
+  late final TapGestureRecognizer _termsRecognizer;
+  late final TapGestureRecognizer _privacyRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()..onTap = () => context.push('/terms-of-service');
+    _privacyRecognizer = TapGestureRecognizer()..onTap = () => context.push('/privacy-policy');
+  }
 
   @override
   void dispose() {
@@ -39,6 +49,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
+    _termsRecognizer.dispose();
+    _privacyRecognizer.dispose();
     super.dispose();
   }
 
@@ -315,9 +327,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
 
                 const SizedBox(height: 24),
-                Text(
-                  'By creating an account, you agree to our Terms of Service and Privacy Policy.',
-                  style: Theme.of(context).textTheme.bodySmall,
+                Text.rich(
+                  TextSpan(
+                    style: Theme.of(context).textTheme.bodySmall,
+                    children: [
+                      const TextSpan(text: 'By creating an account, you agree to our '),
+                      TextSpan(
+                        text: 'Terms of Service',
+                        style: const TextStyle(color: AppColors.logoBlue, fontWeight: FontWeight.w600),
+                        recognizer: _termsRecognizer,
+                      ),
+                      const TextSpan(text: ' and '),
+                      TextSpan(
+                        text: 'Privacy Policy',
+                        style: const TextStyle(color: AppColors.logoBlue, fontWeight: FontWeight.w600),
+                        recognizer: _privacyRecognizer,
+                      ),
+                      const TextSpan(text: '.'),
+                    ],
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
