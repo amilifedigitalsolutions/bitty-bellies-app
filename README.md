@@ -280,7 +280,8 @@ To seed these into DynamoDB, use the AWS CLI or write a Lambda seeder.
 Blockers — app store submission cannot proceed without these:
 
 - [ ] **SES production access** — account is still in sandbox (`ProductionAccessEnabled: false`); welcome/marketing emails only reach verified addresses until AWS approves the support case.
-- [ ] **Real Privacy Policy & Terms of Service** — Settings screen's tiles and the Register screen's consent text are non-functional stubs (`onTap: () {}`); both app stores require a working, reachable privacy policy.
+- [x] **Real Privacy Policy & Terms of Service** — in-app screens now live at `/privacy-policy` and `/terms-of-service`, linked from Settings and the sign-up consent text (draft copy, not lawyer-reviewed).
+- [ ] **Create the support@bittybellies.com inbox** — the Privacy Policy and Terms of Service both list it as the contact address, and it doesn't exist yet. Needs to be set up on the domain (e.g. Squarespace email or a forwarding rule) before launch. Settings' "Contact us" tile is also still a dead `onTap: () {}` stub — wire it to mailto: this address once it exists.
 
 Data durability:
 
