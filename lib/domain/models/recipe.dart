@@ -384,3 +384,7 @@ class Recipe extends Equatable {
   @override
   List<Object?> get props => [id, title, status, updatedAt];
 }
+
+/// A single page of recipes from a paginated listRecipes query.
+/// [nextToken] is null once there are no more pages to fetch.
+typedef RecipePage = ({List<Recipe> items, String? nextToken});

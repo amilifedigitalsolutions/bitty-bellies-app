@@ -265,7 +265,7 @@ To seed these into DynamoDB, use the AWS CLI or write a Lambda seeder.
 - [ ] Apple Sign In + Google Sign In (behind feature flags)
 - [ ] OpenSearch for advanced full-text search
 - [ ] Feedback rating aggregate calculations (Lambda trigger on DynamoDB stream)
-- [ ] Pagination (infinite scroll with `nextToken`)
+- [x] Pagination (infinite scroll with `nextToken`) — Search results and Browse A-Z now paginate for real; see the 2026-08-08 backlog note below for what this replaced.
 - [ ] Deep linking (share recipe URLs that open the app)
 - [ ] Internationalisation (i18n) — Arabic, Hindi, Turkish, etc.
 - [ ] Accessibility audit (screen readers, dynamic text sizes)
@@ -282,6 +282,8 @@ Blockers — app store submission cannot proceed without these:
 - [ ] **SES production access** — account is still in sandbox (`ProductionAccessEnabled: false`); welcome/marketing emails only reach verified addresses until AWS approves the support case.
 - [x] **Real Privacy Policy & Terms of Service** — in-app screens now live at `/privacy-policy` and `/terms-of-service`, linked from Settings and the sign-up consent text (draft copy, not lawyer-reviewed).
 - [x] **Support contact address** — Privacy Policy, Terms of Service, and Settings' "Contact us" tile (now a working `mailto:` link) all point to `AppConstants.supportEmail` (samreenaziz@amilifedigitalsolutions.com), a real inbox. Revisit if a dedicated support@bittybellies.com is ever set up later — it's a one-line change in `app_constants.dart`.
+
+2026-08-08 fix: real pagination for Search — `RecipeRepository.getRecipes()` was already accepting a `nextToken` parameter but discarding the response's `nextToken`, and the A-Z browse list had a hardcoded `limit: 200`. Past that cap, recipes silently stopped appearing with no error and no way to reach them. Fixed: `getRecipes()` now returns a `RecipePage` (items + nextToken); `_SearchResults` and `_AlphabeticalBrowseList` in `search_screen.dart` are backed by new `StateNotifier`-based providers (`recipeSearchProvider`, `recipeBrowseProvider` in `recipe_provider.dart`) that load more on scroll via `nextToken`, with no fixed ceiling.
 
 Data durability:
 

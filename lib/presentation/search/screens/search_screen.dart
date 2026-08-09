@@ -85,7 +85,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
           // Default view is the full A-Z catalog; the moment a query or
           // filter is active, this switches to normal search results —
-          // same recipeListProvider/recipeFilterProvider rules as before.
+          // same recipeSearchProvider/recipeFilterProvider rules as before.
           Expanded(child: hasSearch ? const _SearchResults() : const _AlphabeticalBrowseList()),
         ],
       ),
@@ -98,38 +98,60 @@ class _SearchResults extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final recipesAsync = ref.watch(recipeListProvider);
-    return recipesAsync.when(
-      data: (recipes) {
-        if (recipes.isEmpty) {
-          return const EmptyView(
-            message: 'No recipes found',
-            subMessage: 'Try adjusting your filters or search terms.',
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: recipes.length,
-          itemBuilder: (_, i) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: RecipeCard(
-              recipe: recipes[i],
-              onTap: () => context.push('/recipe/${recipes[i].id}'),
-            ),
-          ),
-        );
-      },
-      loading: () => ListView.builder(
+    final state = ref.watch(recipeSearchProvider);
+
+    if (state.isLoading) {
+      return ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: 3,
         itemBuilder: (_, __) => const Padding(
           padding: EdgeInsets.only(bottom: 16),
           child: RecipeCardSkeleton(),
         ),
-      ),
-      error: (e, _) => ErrorView(
+      );
+    }
+
+    if (state.error != null && state.items.isEmpty) {
+      return ErrorView(
         message: 'Search failed. Please try again.',
-        onRetry: () => ref.invalidate(recipeListProvider),
+        onRetry: () => ref.invalidate(recipeSearchProvider),
+      );
+    }
+
+    if (state.items.isEmpty) {
+      return const EmptyView(
+        message: 'No recipes found',
+        subMessage: 'Try adjusting your filters or search terms.',
+      );
+    }
+
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (state.hasMore &&
+            !state.isLoadingMore &&
+            notification.metrics.pixels >= notification.metrics.maxScrollExtent - 300) {
+          ref.read(recipeSearchProvider.notifier).loadMore();
+        }
+        return false;
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: state.items.length + (state.hasMore ? 1 : 0),
+        itemBuilder: (_, i) {
+          if (i == state.items.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: RecipeCard(
+              recipe: state.items[i],
+              onTap: () => context.push('/recipe/${state.items[i].id}'),
+            ),
+          );
+        },
       ),
     );
   }
@@ -144,49 +166,69 @@ class _AlphabeticalBrowseList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final recipesAsync = ref.watch(allRecipesAlphabeticalProvider);
-    return recipesAsync.when(
-      data: (recipes) {
-        if (recipes.isEmpty) {
-          return const EmptyView(message: 'No recipes yet', subMessage: 'Check back soon.');
-        }
-        final groups = <String, List<Recipe>>{};
-        for (final r in recipes) {
-          final first = r.title.isNotEmpty ? r.title[0].toUpperCase() : '#';
-          final letter = RegExp(r'[A-Z]').hasMatch(first) ? first : '#';
-          groups.putIfAbsent(letter, () => []).add(r);
-        }
-        final letters = groups.keys.toList()..sort();
+    final state = ref.watch(recipeBrowseProvider);
 
-        return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          itemCount: letters.length,
-          itemBuilder: (context, i) {
-            final letter = letters[i];
-            final items = groups[letter]!;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 12, bottom: 8),
-                  child: Text(
-                    letter,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
-                  ),
-                ),
-                ...items.map((r) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: RecipeRowCard(recipe: r, onTap: () => context.push('/recipe/${r.id}')),
-                    )),
-              ],
-            );
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => ErrorView(
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.error != null && state.items.isEmpty) {
+      return ErrorView(
         message: 'Could not load recipes. Check your connection.',
-        onRetry: () => ref.invalidate(allRecipesAlphabeticalProvider),
+        onRetry: () => ref.invalidate(recipeBrowseProvider),
+      );
+    }
+
+    if (state.items.isEmpty) {
+      return const EmptyView(message: 'No recipes yet', subMessage: 'Check back soon.');
+    }
+
+    final groups = <String, List<Recipe>>{};
+    for (final r in state.items) {
+      final first = r.title.isNotEmpty ? r.title[0].toUpperCase() : '#';
+      final letter = RegExp(r'[A-Z]').hasMatch(first) ? first : '#';
+      groups.putIfAbsent(letter, () => []).add(r);
+    }
+    final letters = groups.keys.toList()..sort();
+
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (state.hasMore &&
+            !state.isLoadingMore &&
+            notification.metrics.pixels >= notification.metrics.maxScrollExtent - 300) {
+          ref.read(recipeBrowseProvider.notifier).loadMore();
+        }
+        return false;
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        itemCount: letters.length + (state.hasMore ? 1 : 0),
+        itemBuilder: (context, i) {
+          if (i == letters.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          final letter = letters[i];
+          final items = groups[letter]!;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 8),
+                child: Text(
+                  letter,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
+                ),
+              ),
+              ...items.map((r) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: RecipeRowCard(recipe: r, onTap: () => context.push('/recipe/${r.id}')),
+                  )),
+            ],
+          );
+        },
       ),
     );
   }
