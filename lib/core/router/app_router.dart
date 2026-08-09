@@ -15,8 +15,10 @@ import '../../presentation/search/screens/search_screen.dart';
 import '../../presentation/upload/screens/upload_recipe_screen.dart';
 import '../../presentation/profile/screens/profile_screen.dart';
 import '../../presentation/profile/screens/saved_recipes_screen.dart';
+import '../../presentation/settings/screens/legal_document_screen.dart';
 import '../../presentation/settings/screens/settings_screen.dart';
 import '../../presentation/splash/splash_screen.dart';
+import '../constants/legal_text.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -78,6 +80,16 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Guided search wizard, reached from Home
       GoRoute(path: '/guided-search', builder: (_, __) => const GuidedSearchWizardScreen()),
+
+      // Legal
+      GoRoute(
+        path: '/privacy-policy',
+        builder: (_, __) => const LegalDocumentScreen(title: 'Privacy Policy', body: LegalText.privacyPolicy),
+      ),
+      GoRoute(
+        path: '/terms-of-service',
+        builder: (_, __) => const LegalDocumentScreen(title: 'Terms of Service', body: LegalText.termsOfService),
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(child: Text('Page not found: ${state.error}')),

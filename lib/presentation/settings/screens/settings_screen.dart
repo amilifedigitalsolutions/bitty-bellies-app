@@ -40,8 +40,8 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               );
             }),
-            _Tile(icon: Icons.privacy_tip_outlined, label: 'Privacy Policy', onTap: () {}),
-            _Tile(icon: Icons.description_outlined, label: 'Terms of Service', onTap: () {}),
+            _Tile(icon: Icons.privacy_tip_outlined, label: 'Privacy Policy', onTap: () => context.push('/privacy-policy')),
+            _Tile(icon: Icons.description_outlined, label: 'Terms of Service', onTap: () => context.push('/terms-of-service')),
           ]),
           _Section(title: 'Community', tiles: [
             _Tile(icon: Icons.flag_outlined, label: 'How reporting works', onTap: () {
