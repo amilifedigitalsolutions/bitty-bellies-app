@@ -300,7 +300,7 @@ Testing & CI:
 
 Observability:
 
-- [ ] Crash reporting (Sentry or Firebase Crashlytics)
+- [ ] Crash reporting (Sentry recommended over Firebase Crashlytics — this app is all-AWS, and Crashlytics would pull in the full Firebase SDK as a second cloud vendor for one feature). Not required for App Store/Play Store submission, so deliberately deferred until closer to real users. Note: Sentry's new-org signup didn't surface its free "Developer" plan directly (may be defaulting into a paid trial) — check Organization Settings → Subscription for a downgrade option when revisiting this.
 - [ ] Analytics provider wired into `analytics_service.dart` (currently a `TODO`)
 - [ ] CloudWatch alarms on Lambdas / DynamoDB throttling / AppSync errors
 
