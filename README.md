@@ -271,7 +271,7 @@ To seed these into DynamoDB, use the AWS CLI or write a Lambda seeder.
 - [ ] Accessibility audit (screen readers, dynamic text sizes)
 - [ ] CI/CD pipeline (GitHub Actions → CDK deploy → TestFlight/Play Store)
 - [ ] Analytics provider wired up (Pinpoint / PostHog)
-- [ ] Monetization (ads, subscriptions, sponsored recipes — gated behind feature flags)
+- [ ] Monetization — see the concrete plan under "Production Readiness Backlog" below (one-time IAP to unlock multiple children); ads/affiliate links on ingredients were considered and deliberately ruled out.
 
 ---
 
@@ -319,6 +319,12 @@ Other:
 - [ ] Rate limiting / abuse prevention on upload and comment mutations
 - [ ] `emailRecipe()` in `recipe_repository_impl.dart` is still a stub (fakes a delay, always returns success — no email is actually sent). The Lambda it needs (`EmailShareLambda` in the CDK stack) is deployed but has no trigger wired up — no API Gateway route, no AppSync resolver, nothing can invoke it. Bigger than a one-line fix: needs a decision on how it's invoked (an AppSync mutation + Lambda data source would match this app's all-GraphQL pattern better than the originally-planned separate REST API Gateway endpoint) before implementing.
 - [x] Removed a different piece of dead code found while getting CI green: an unused `_RecipeCopyWith` extension in `recipe_repository_impl.dart` that nothing called.
+
+Monetization (2026-08-09 decision):
+
+- **Principle**: don't monetize what users upload for free without sharing revenue with them. This rules out affiliate links on ingredients and ads on recipe content — both would profit off community contributions with nothing going back to the contributor. Sell the platform's own features/utility instead.
+- [ ] **Plan: one-time IAP to unlock storing more than N children.** Cap the free tier at 1 child; adding a 2nd+ prompts a non-consumable in-app purchase (pay once, unlocked forever, restorable across devices — both Apple and Google support this natively). Needs: `in_app_purchase` Flutter package (StoreKit + Play Billing), a paywall gate in the add-child flow, server-side receipt validation (a Lambda verifying the purchase with Apple/Google — never trust an "unlocked" flag set only by the client), and the IAP product registered in App Store Connect/Play Console (needs the app already listed there first). Deliberately deferred until post-launch, once real users are actually hitting the free-tier cap.
+- Sponsored recipes (brand pays to feature their own content) remains a fair option too, but needs actual sponsor relationships lined up first — business development, not an engineering task.
 
 ---
 
