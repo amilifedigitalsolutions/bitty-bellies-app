@@ -287,7 +287,7 @@ Blockers — app store submission cannot proceed without these:
 
 Data durability:
 
-- [ ] Point-in-time recovery on the remaining DynamoDB tables (`CommentsTable`, `FeedbackTable`, `ReportsTable`, `SavedRecipesTable`, `ChildFoldersTable`, `MonetizationTable` — only `RecipesTable`/`UsersTable` have it today)
+- [x] Point-in-time recovery on the remaining DynamoDB tables (`CommentsTable`, `FeedbackTable`, `ReportsTable`, `SavedRecipesTable`, `ChildFoldersTable`, `MonetizationTable`) — all 8 tables now have it. Needs `cdk deploy` to take effect (in-place update, no replacement — confirmed via `cdk diff --strict`).
 
 Content safety:
 
@@ -296,7 +296,7 @@ Content safety:
 Testing & CI:
 
 - [ ] Real unit/widget/integration test coverage (only the Flutter-generated boilerplate exists today)
-- [ ] CI pipeline (`.github/workflows` is empty — `flutter analyze`/builds are all manual)
+- [x] CI pipeline — `.github/workflows/flutter-ci.yml` runs `flutter analyze` + `flutter test` on push/PR to `main`/`develop`. Deliberately doesn't gate on `dart format`, since this codebase doesn't follow its line-length defaults in many files; that check would be pure noise, not signal.
 
 Observability:
 
@@ -317,7 +317,8 @@ Other:
 - [ ] Accessibility pass (`Semantics()` unused anywhere in `lib/`)
 - [ ] Offline/connectivity handling beyond what's in `main.dart`
 - [ ] Rate limiting / abuse prevention on upload and comment mutations
-- [ ] Remove leftover `TODO` in `recipe_repository_impl.dart:474` (real API Gateway call once Lambda is deployed)
+- [ ] `emailRecipe()` in `recipe_repository_impl.dart` is still a stub (fakes a delay, always returns success — no email is actually sent). The Lambda it needs (`EmailShareLambda` in the CDK stack) is deployed but has no trigger wired up — no API Gateway route, no AppSync resolver, nothing can invoke it. Bigger than a one-line fix: needs a decision on how it's invoked (an AppSync mutation + Lambda data source would match this app's all-GraphQL pattern better than the originally-planned separate REST API Gateway endpoint) before implementing.
+- [x] Removed a different piece of dead code found while getting CI green: an unused `_RecipeCopyWith` extension in `recipe_repository_impl.dart` that nothing called.
 
 ---
 
