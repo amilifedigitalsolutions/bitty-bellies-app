@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_constants.dart';
 
@@ -54,7 +55,9 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               );
             }),
-            _Tile(icon: Icons.email_outlined, label: 'Contact us', onTap: () {}),
+            _Tile(icon: Icons.email_outlined, label: 'Contact us', onTap: () {
+              launchUrl(Uri(scheme: 'mailto', path: AppConstants.supportEmail));
+            }),
           ]),
           // Monetization placeholder — no UI yet
           // Section('Premium features') — future

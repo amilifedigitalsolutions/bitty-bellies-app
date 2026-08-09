@@ -3,6 +3,7 @@ class AppConstants {
 
   static const String appName = 'Bitty Bellies';
   static const String appTagline = 'Real recipes, from real parents, just like you.';
+  static const String supportEmail = 'samreenaziz@amilifedigitalsolutions.com';
 
   // Recipe media storage — matches the bucket/region configured in
   // amplify_config.dart's awsS3StoragePlugin.
