@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/app_error.dart';
 import '../../../data/repositories/recipe_repository_impl.dart';
 import '../../../domain/models/meal_window.dart';
 import '../../../domain/models/recipe.dart';
@@ -12,13 +13,66 @@ final recipeRepositoryProvider = Provider<RecipeRepository>((ref) => RecipeRepos
 // Active filter state
 final recipeFilterProvider = StateProvider<RecipeFilter>((ref) => RecipeFilter.empty);
 
-// Recipe list — reacts to filter changes
-final recipeListProvider = FutureProvider.autoDispose<List<Recipe>>((ref) async {
-  final repo = ref.read(recipeRepositoryProvider);
-  final filter = ref.watch(recipeFilterProvider);
-  final result = await repo.getRecipes(filter: filter);
-  return result.when(success: (r) => r, failure: (e) => throw e);
-});
+// Paginated recipe list state, shared by search results and the A-Z browse.
+// nextToken == null means there are no more pages left to fetch.
+class RecipeListState {
+  final List<Recipe> items;
+  final String? nextToken;
+  final bool isLoading;
+  final bool isLoadingMore;
+  final AppError? error;
+
+  const RecipeListState({
+    this.items = const [],
+    this.nextToken,
+    this.isLoading = true,
+    this.isLoadingMore = false,
+    this.error,
+  });
+
+  bool get hasMore => nextToken != null;
+}
+
+// Recipe search results — reacts to filter changes, paginates via nextToken.
+class RecipeSearchNotifier extends StateNotifier<RecipeListState> {
+  RecipeSearchNotifier(this._ref) : super(const RecipeListState()) {
+    _load();
+    _ref.listen(recipeFilterProvider, (_, __) => _load());
+  }
+
+  final Ref _ref;
+
+  Future<void> _load() async {
+    state = const RecipeListState();
+    final repo = _ref.read(recipeRepositoryProvider);
+    final filter = _ref.read(recipeFilterProvider);
+    final result = await repo.getRecipes(filter: filter);
+    result.when(
+      success: (page) => state = RecipeListState(items: page.items, nextToken: page.nextToken, isLoading: false),
+      failure: (e) => state = RecipeListState(isLoading: false, error: e),
+    );
+  }
+
+  Future<void> loadMore() async {
+    if (state.isLoadingMore || !state.hasMore) return;
+    state = RecipeListState(items: state.items, nextToken: state.nextToken, isLoading: false, isLoadingMore: true);
+    final repo = _ref.read(recipeRepositoryProvider);
+    final filter = _ref.read(recipeFilterProvider);
+    final result = await repo.getRecipes(filter: filter, nextToken: state.nextToken);
+    result.when(
+      success: (page) => state = RecipeListState(
+        items: [...state.items, ...page.items],
+        nextToken: page.nextToken,
+        isLoading: false,
+      ),
+      failure: (_) => state = RecipeListState(items: state.items, nextToken: state.nextToken, isLoading: false),
+    );
+  }
+}
+
+final recipeSearchProvider = StateNotifierProvider.autoDispose<RecipeSearchNotifier, RecipeListState>(
+  (ref) => RecipeSearchNotifier(ref),
+);
 
 // Which meal is "now", based on the device's local time — read once per
 // provider container build rather than per rebuild, so it doesn't drift
@@ -28,26 +82,60 @@ final currentMealWindowProvider = Provider<MealWindow>((ref) => MealWindow.forTi
 // Home's "right now" recommendations — deliberately its own provider using
 // a locally-built RecipeFilter, not recipeFilterProvider, so it can't be
 // stomped by (or itself stomp) whatever filter state Search is holding;
-// the two screens' recipe lists are independent.
+// the two screens' recipe lists are independent. Not paginated — this is a
+// bounded "right now" section, not a full browse.
 final homeRecommendedRecipesProvider = FutureProvider.autoDispose<List<Recipe>>((ref) async {
   final window = ref.watch(currentMealWindowProvider);
   final repo = ref.read(recipeRepositoryProvider);
   final result = await repo.getRecipes(filter: RecipeFilter(mealCategories: window.categories));
-  return result.when(success: (r) => r, failure: (e) => throw e);
+  return result.when(success: (page) => page.items, failure: (e) => throw e);
 });
 
 // Every recipe, sorted A-Z by title, for the Search screen's "Browse A-Z"
-// index. Same 200-item MVP cap and future-GSI caveat as
-// availableCuisinesProvider below — fine at current volume, will need a
-// proper paginated/indexed browse once the catalog grows past that.
-final allRecipesAlphabeticalProvider = FutureProvider.autoDispose<List<Recipe>>((ref) async {
-  final repo = ref.read(recipeRepositoryProvider);
-  final result = await repo.getRecipes(limit: 200);
-  return result.when(
-    success: (r) => (List<Recipe>.from(r)..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()))),
-    failure: (e) => throw e,
-  );
-});
+// index. Paginates via nextToken, re-sorting the accumulated list after
+// each page — fine up to the low thousands of recipes; a genuinely huge
+// catalog would want a maintained alphabetical index instead of client
+// sort, same as availableCuisinesProvider's distinct-value caveat below.
+class RecipeBrowseNotifier extends StateNotifier<RecipeListState> {
+  RecipeBrowseNotifier(this._ref) : super(const RecipeListState()) {
+    _load();
+  }
+
+  final Ref _ref;
+
+  List<Recipe> _sorted(List<Recipe> list) =>
+      List<Recipe>.from(list)..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+
+  Future<void> _load() async {
+    state = const RecipeListState();
+    final repo = _ref.read(recipeRepositoryProvider);
+    final result = await repo.getRecipes();
+    result.when(
+      success: (page) =>
+          state = RecipeListState(items: _sorted(page.items), nextToken: page.nextToken, isLoading: false),
+      failure: (e) => state = RecipeListState(isLoading: false, error: e),
+    );
+  }
+
+  Future<void> loadMore() async {
+    if (state.isLoadingMore || !state.hasMore) return;
+    state = RecipeListState(items: state.items, nextToken: state.nextToken, isLoading: false, isLoadingMore: true);
+    final repo = _ref.read(recipeRepositoryProvider);
+    final result = await repo.getRecipes(nextToken: state.nextToken);
+    result.when(
+      success: (page) => state = RecipeListState(
+        items: _sorted([...state.items, ...page.items]),
+        nextToken: page.nextToken,
+        isLoading: false,
+      ),
+      failure: (_) => state = RecipeListState(items: state.items, nextToken: state.nextToken, isLoading: false),
+    );
+  }
+}
+
+final recipeBrowseProvider = StateNotifierProvider.autoDispose<RecipeBrowseNotifier, RecipeListState>(
+  (ref) => RecipeBrowseNotifier(ref),
+);
 
 // Cuisines actually present in published recipes — drives the Home screen's
 // filter pills so a pill is never shown with zero matching recipes.

@@ -21,7 +21,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
   // ──────────────────────────────────────────────────────────────────────────
 
   @override
-  Future<Result<List<Recipe>>> getRecipes({
+  Future<Result<RecipePage>> getRecipes({
     RecipeFilter filter = RecipeFilter.empty,
     String? nextToken,
     int limit = 20,
@@ -45,11 +45,12 @@ class RecipeRepositoryImpl implements RecipeRepository {
       }
 
       final data = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
-      final items = (data['listRecipes']?['items'] as List? ?? [])
+      final listRecipes = data['listRecipes'] as Map<String, dynamic>?;
+      final items = (listRecipes?['items'] as List? ?? [])
           .map((e) => Recipe.fromJson(e as Map<String, dynamic>))
           .toList();
 
-      return Success(items);
+      return Success((items: items, nextToken: listRecipes?['nextToken'] as String?));
     } catch (e) {
       return Failure(UnknownError(e.toString()));
     }

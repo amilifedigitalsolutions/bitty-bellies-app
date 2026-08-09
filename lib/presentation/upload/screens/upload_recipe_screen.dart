@@ -321,7 +321,7 @@ class _UploadRecipeScreenState extends ConsumerState<UploadRecipeScreen> {
 
     result.when(
       success: (r) {
-        ref.invalidate(recipeListProvider);
+        ref.invalidate(recipeSearchProvider);
         ref.invalidate(myRecipesProvider);
         if (existing != null) ref.invalidate(recipeDetailProvider(recipeId));
         final message = existing != null

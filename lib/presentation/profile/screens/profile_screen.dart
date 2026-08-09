@@ -421,7 +421,7 @@ class _OwnerActions extends ConsumerWidget {
     result.when(
       success: (_) {
         ref.invalidate(myRecipesProvider);
-        ref.invalidate(recipeListProvider);
+        ref.invalidate(recipeSearchProvider);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recipe deleted.')));
       },
       failure: (e) {
