@@ -1,0 +1,28 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.8'
+          channel: stable
+
+      - run: flutter pub get
+
+      - run: flutter analyze --no-fatal-infos
+        # Infos (style nits) are non-fatal; real errors and warnings still
+        # fail the build. Not running `dart format --set-exit-if-changed`
+        # here — this codebase intentionally doesn't follow its line-length
+        # defaults in many files, so that check would be all noise.
+
+      - run: flutter test

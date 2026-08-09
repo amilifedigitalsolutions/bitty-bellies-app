@@ -688,37 +688,3 @@ class RecipeRepositoryImpl implements RecipeRepository {
         },
       };
 }
-
-extension _RecipeCopyWith on Recipe {
-  Recipe copyWith({String? id}) => Recipe(
-        id: id ?? this.id,
-        title: title,
-        description: description,
-        creatorId: creatorId,
-        creatorName: creatorName,
-        creatorAvatarUrl: creatorAvatarUrl,
-        ingredients: ingredients,
-        steps: steps,
-        media: media,
-        prepTimeMinutes: prepTimeMinutes,
-        cookTimeMinutes: cookTimeMinutes,
-        servings: servings,
-        ageStage: ageStage,
-        texture: texture,
-        cuisine: cuisine,
-        cultureRegion: cultureRegion,
-        mealCategories: mealCategories,
-        dietTypes: dietTypes,
-        allergens: allergens,
-        chokingHazardNotes: chokingHazardNotes,
-        safetyNotes: safetyNotes,
-        storageReheatingNotes: storageReheatingNotes,
-        creatorNotes: creatorNotes,
-        status: status,
-        tags: tags,
-        isSponsored: isSponsored,
-        isPremium: isPremium,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
-}
