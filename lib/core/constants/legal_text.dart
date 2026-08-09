@@ -1,3 +1,5 @@
+import 'app_constants.dart';
+
 // Draft legal copy for the in-app Privacy Policy and Terms of Service
 // screens. This is a starting point tailored to what the app actually
 // does (AWS-backed storage, community recipe content, optional child
@@ -59,7 +61,7 @@ We may update this policy from time to time. If we make material changes, we'll 
 
 8. Contact Us
 
-Questions about this policy? Email us at support@bittybellies.com.
+Questions about this policy? Email us at ${AppConstants.supportEmail}.
 ''';
 
   static const String termsOfService = '''
@@ -107,6 +109,6 @@ We may update these Terms from time to time. Continuing to use the app after cha
 
 10. Contact Us
 
-Questions about these Terms? Email us at support@bittybellies.com.
+Questions about these Terms? Email us at ${AppConstants.supportEmail}.
 ''';
 }

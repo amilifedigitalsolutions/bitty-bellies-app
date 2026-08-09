@@ -281,7 +281,7 @@ Blockers — app store submission cannot proceed without these:
 
 - [ ] **SES production access** — account is still in sandbox (`ProductionAccessEnabled: false`); welcome/marketing emails only reach verified addresses until AWS approves the support case.
 - [x] **Real Privacy Policy & Terms of Service** — in-app screens now live at `/privacy-policy` and `/terms-of-service`, linked from Settings and the sign-up consent text (draft copy, not lawyer-reviewed).
-- [ ] **Create the support@bittybellies.com inbox** — the Privacy Policy and Terms of Service both list it as the contact address, and it doesn't exist yet. Needs to be set up on the domain (e.g. Squarespace email or a forwarding rule) before launch. Settings' "Contact us" tile is also still a dead `onTap: () {}` stub — wire it to mailto: this address once it exists.
+- [x] **Support contact address** — Privacy Policy, Terms of Service, and Settings' "Contact us" tile (now a working `mailto:` link) all point to `AppConstants.supportEmail` (samreenaziz@amilifedigitalsolutions.com), a real inbox. Revisit if a dedicated support@bittybellies.com is ever set up later — it's a one-line change in `app_constants.dart`.
 
 Data durability:
 
