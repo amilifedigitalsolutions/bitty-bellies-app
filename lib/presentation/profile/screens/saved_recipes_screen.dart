@@ -404,7 +404,8 @@ class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SafeArea(
+      child: Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 24),
       child: SingleChildScrollView(
         child: Column(
@@ -463,6 +464,7 @@ class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
           ),
         ],
         ),
+      ),
       ),
     );
   }
