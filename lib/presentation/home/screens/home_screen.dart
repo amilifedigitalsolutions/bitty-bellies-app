@@ -35,32 +35,29 @@ class HomeScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        // White backdrop chip behind the wordmark — the
-                        // logo's baby illustration is skin/cream toned and
-                        // reads better with something behind it than
-                        // sitting directly on the page background.
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(14),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 64,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Image.asset('assets/logos/logo-long.png', height: 64, fit: BoxFit.contain),
+                          Positioned.fill(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: user == null
+                                  ? TextButton(
+                                      onPressed: () => context.push('/login'),
+                                      child: const Text('Sign in'),
+                                    )
+                                  : IconButton(
+                                      icon: const Icon(Icons.bookmark_outline),
+                                      onPressed: () => context.push('/saved'),
+                                    ),
+                            ),
                           ),
-                          child: Image.asset('assets/logos/logo-long.png', height: 24, fit: BoxFit.contain),
-                        ),
-                        const Spacer(),
-                        if (user == null)
-                          TextButton(
-                            onPressed: () => context.push('/login'),
-                            child: const Text('Sign in'),
-                          )
-                        else
-                          IconButton(
-                            icon: const Icon(Icons.bookmark_outline),
-                            onPressed: () => context.push('/saved'),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Text(
