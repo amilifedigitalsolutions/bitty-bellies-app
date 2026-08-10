@@ -20,13 +20,13 @@ class AppColors {
   // distinct from `primary` (which comes from a different element of the
   // logo, its small "signature" mark, not the main wordmark itself).
   static const Color logoBlue = Color(0xFF0CC0DF);
-  // Screen backgrounds (Scaffold/AppBar) are white; cards/bottom nav/chips
-  // keep the app's cream identity via `surface`, which used to be the
-  // near-white shade sitting one step lighter than the old tan background —
-  // now that the page itself is white, `surface` carries that same tan tone
-  // instead, so cards still read as a visually distinct cream layer rather
-  // than washing out to white-on-white.
-  static const Color background = Colors.white;
+  // Screen backgrounds (Scaffold/AppBar) are a soft eggshell, not stark
+  // white; cards/bottom nav/chips keep the app's cream identity via
+  // `surface`, which used to be the near-white shade sitting one step
+  // lighter than the old tan background — now that the page itself is a
+  // light off-white, `surface` carries that same tan tone instead, so
+  // cards still read as a visually distinct cream layer.
+  static const Color background = Color(0xFFFAF7F0);
   static const Color surface = Color(0xFFF5EEE1);
   static const Color surfaceVariant = Color(0xFFEFE1CC);
   // primary (blue-violet) is dark/saturated enough for white text; secondary
