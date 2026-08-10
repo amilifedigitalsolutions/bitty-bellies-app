@@ -162,6 +162,20 @@ class AppTheme {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         ),
+        // White, not the app's usual cream/tan — sheets and dialogs sit on
+        // top of the screen behind them, so a clean white reads as a
+        // distinct surface. surfaceTintColor: transparent is required too;
+        // Material 3 otherwise washes an elevation-based tint (leaning on
+        // colorScheme.primary) over "surface" colored widgets, which is
+        // what made these read as tan/cream even with no color set.
+        bottomSheetTheme: const BottomSheetThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+        ),
+        dialogTheme: const DialogThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+        ),
         // Minimal flat bar with a soft pastel pill behind the active icon,
         // no shadow — matches the plain outlined-icon bottom nav look.
         navigationBarTheme: NavigationBarThemeData(
