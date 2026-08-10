@@ -5,12 +5,20 @@ class Child extends Equatable {
   final String name;
   final DateTime birthdate;
   final DateTime? createdAt;
+  // Diet types (e.g. "Vegetarian", "Dairy-free") and allergens to avoid —
+  // same option lists as AppConstants.dietTypes/allergens, so a child's
+  // profile can drive RecipeFilter.dietTypes/excludeAllergens directly when
+  // "search by child" is used, not just ageStages.
+  final List<String> dietTypes;
+  final List<String> excludeAllergens;
 
   const Child({
     required this.id,
     required this.name,
     required this.birthdate,
     this.createdAt,
+    this.dietTypes = const [],
+    this.excludeAllergens = const [],
   });
 
   // "8 months" / "2 years" — computed from birthdate rather than stored, so
@@ -58,6 +66,8 @@ class Child extends Equatable {
         name: json['name'] as String,
         birthdate: DateTime.parse(json['birthdate'] as String),
         createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : null,
+        dietTypes: (json['dietTypes'] as List?)?.map((e) => e as String).toList() ?? const [],
+        excludeAllergens: (json['excludeAllergens'] as List?)?.map((e) => e as String).toList() ?? const [],
       );
 
   Map<String, dynamic> toJson() => {
@@ -65,11 +75,13 @@ class Child extends Equatable {
         'name': name,
         'birthdate': _dateOnly(birthdate),
         'createdAt': createdAt?.toUtc().toIso8601String(),
+        'dietTypes': dietTypes,
+        'excludeAllergens': excludeAllergens,
       };
 
   static String _dateOnly(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   @override
-  List<Object?> get props => [id, name, birthdate];
+  List<Object?> get props => [id, name, birthdate, dietTypes, excludeAllergens];
 }

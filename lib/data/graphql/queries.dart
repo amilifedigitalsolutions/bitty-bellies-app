@@ -97,7 +97,7 @@ class RecipeQueries {
         id displayName email bio avatarUrl country region
         culturalBackground cookingStyle savedRecipesCount uploadedRecipesCount
         isVerifiedCreator isModerator isAdmin isActive createdAt updatedAt
-        children { id name birthdate createdAt }
+        children { id name birthdate createdAt dietTypes excludeAllergens }
       }
     }
   ''';
@@ -216,7 +216,7 @@ class RecipeMutations {
         id displayName email bio avatarUrl country region
         culturalBackground cookingStyle savedRecipesCount uploadedRecipesCount
         isVerifiedCreator isModerator isAdmin isActive createdAt updatedAt
-        children { id name birthdate createdAt }
+        children { id name birthdate createdAt dietTypes excludeAllergens }
       }
     }
   ''';
@@ -227,7 +227,7 @@ class RecipeMutations {
         id displayName email bio avatarUrl country region
         culturalBackground cookingStyle savedRecipesCount uploadedRecipesCount
         isVerifiedCreator isModerator isAdmin isActive createdAt updatedAt
-        children { id name birthdate createdAt }
+        children { id name birthdate createdAt dietTypes excludeAllergens }
       }
     }
   ''';

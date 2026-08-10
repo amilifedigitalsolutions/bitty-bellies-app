@@ -242,12 +242,24 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Result<UserProfile>> addChild(String name, DateTime birthdate) async {
+  Future<Result<UserProfile>> addChild(
+    String name,
+    DateTime birthdate, {
+    List<String> dietTypes = const [],
+    List<String> excludeAllergens = const [],
+  }) async {
     final currentResult = await getCurrentUser();
     return currentResult.when(
       success: (profile) async {
         if (profile == null) return const Failure(AuthError('Not signed in.'));
-        final child = Child(id: const Uuid().v4(), name: name, birthdate: birthdate, createdAt: DateTime.now().toUtc());
+        final child = Child(
+          id: const Uuid().v4(),
+          name: name,
+          birthdate: birthdate,
+          createdAt: DateTime.now().toUtc(),
+          dietTypes: dietTypes,
+          excludeAllergens: excludeAllergens,
+        );
         return updateProfile(profile.copyWith(children: [...profile.children, child]));
       },
       failure: (e) async => Failure(e),

@@ -247,6 +247,7 @@ To seed these into DynamoDB, use the AWS CLI or write a Lambda seeder.
 - [x] Auth: email/password, confirm email, forgot password
 - [x] User profile with edit sheet
 - [x] Saved recipes screen
+- [x] Children on profile with per-child diet/allergen preferences, matched against recipes via "search by child" and per-child recipe folders
 - [x] Settings screen
 - [x] AWS CDK infrastructure: Cognito, AppSync, DynamoDB (8 tables with GSIs), S3, SES Lambda
 - [x] AppSync GraphQL schema with auth rules

@@ -65,7 +65,7 @@ class _SearchByChildSheet extends ConsumerWidget {
                 Text('Search by child', style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 4),
                 Text(
-                  'Shows recipes that are age-appropriate for the child you pick.',
+                  'Shows recipes matched to the age, diet, and allergens of the child you pick.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
@@ -76,7 +76,11 @@ class _SearchByChildSheet extends ConsumerWidget {
                       subtitle: Text(c.ageLabel),
                       onTap: () {
                         ref.read(recipeFilterProvider.notifier).update(
-                              (_) => RecipeFilter(ageStages: c.matchingAgeStages(AppConstants.ageStages)),
+                              (_) => RecipeFilter(
+                                ageStages: c.matchingAgeStages(AppConstants.ageStages),
+                                dietTypes: c.dietTypes,
+                                excludeAllergens: c.excludeAllergens,
+                              ),
                             );
                         Navigator.pop(context);
                         // This sheet is opened from Home now, so a plain

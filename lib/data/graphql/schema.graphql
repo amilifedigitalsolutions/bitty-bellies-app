@@ -30,6 +30,8 @@ type Child {
   name: String!
   birthdate: AWSDate!
   createdAt: AWSDateTime
+  dietTypes: [String]
+  excludeAllergens: [String]
 }
 
 input ChildInput {
@@ -37,6 +39,8 @@ input ChildInput {
   name: String!
   birthdate: AWSDate!
   createdAt: AWSDateTime
+  dietTypes: [String]
+  excludeAllergens: [String]
 }
 
 enum RecipeFolder {

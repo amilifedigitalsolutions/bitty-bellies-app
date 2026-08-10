@@ -310,6 +310,8 @@ class AddEditChildSheet extends ConsumerStatefulWidget {
 class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
   late final TextEditingController _nameCtrl;
   DateTime? _birthdate;
+  late List<String> _dietTypes;
+  late List<String> _excludeAllergens;
   bool _saving = false;
   String? _error;
 
@@ -318,6 +320,8 @@ class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.existing?.name ?? '');
     _birthdate = widget.existing?.birthdate;
+    _dietTypes = List.of(widget.existing?.dietTypes ?? const []);
+    _excludeAllergens = List.of(widget.existing?.excludeAllergens ?? const []);
   }
 
   @override
@@ -350,8 +354,15 @@ class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
     setState(() { _saving = true; _error = null; });
     final repo = ref.read(authRepositoryProvider);
     final result = widget.existing != null
-        ? await repo.updateChild(Child(id: widget.existing!.id, name: name, birthdate: _birthdate!, createdAt: widget.existing!.createdAt))
-        : await repo.addChild(name, _birthdate!);
+        ? await repo.updateChild(Child(
+            id: widget.existing!.id,
+            name: name,
+            birthdate: _birthdate!,
+            createdAt: widget.existing!.createdAt,
+            dietTypes: _dietTypes,
+            excludeAllergens: _excludeAllergens,
+          ))
+        : await repo.addChild(name, _birthdate!, dietTypes: _dietTypes, excludeAllergens: _excludeAllergens);
     if (!mounted) return;
     await result.when(
       // Awaiting the refresh before popping keeps the provider-driven
@@ -368,11 +379,35 @@ class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
     );
   }
 
+  Widget _chipSection({
+    required String title,
+    required List<String> options,
+    required List<String> selected,
+    required ValueChanged<String> onToggle,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: options.map((o) {
+            final sel = selected.contains(o);
+            return FilterChip(label: Text(o), selected: sel, onSelected: (_) => onToggle(o));
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 24),
-      child: Column(
+      child: SingleChildScrollView(
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -397,6 +432,24 @@ class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
               ),
             ),
           ),
+          const SizedBox(height: 20),
+          _chipSection(
+            title: 'Dietary preferences (optional)',
+            options: AppConstants.dietTypes,
+            selected: _dietTypes,
+            onToggle: (o) => setState(() {
+              _dietTypes.contains(o) ? _dietTypes.remove(o) : _dietTypes.add(o);
+            }),
+          ),
+          const SizedBox(height: 16),
+          _chipSection(
+            title: 'Allergens to avoid (optional)',
+            options: AppConstants.allergens,
+            selected: _excludeAllergens,
+            onToggle: (o) => setState(() {
+              _excludeAllergens.contains(o) ? _excludeAllergens.remove(o) : _excludeAllergens.add(o);
+            }),
+          ),
           if (_error != null) ...[
             const SizedBox(height: 8),
             Text(_error!, style: const TextStyle(color: AppColors.error)),
@@ -409,6 +462,7 @@ class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
                 : const Text('Save'),
           ),
         ],
+        ),
       ),
     );
   }
