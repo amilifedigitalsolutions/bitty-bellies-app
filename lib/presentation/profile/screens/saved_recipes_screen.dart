@@ -102,6 +102,7 @@ void _showAddOrEditChild(BuildContext context, WidgetRef ref, {Child? existing})
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     backgroundColor: Colors.white,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
     builder: (_) => AddEditChildSheet(existing: existing),

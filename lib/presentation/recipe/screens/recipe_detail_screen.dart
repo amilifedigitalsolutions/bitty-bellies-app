@@ -135,6 +135,7 @@ class _RecipeDetailState extends ConsumerState<_RecipeDetail> with SingleTickerP
         await showModalBottomSheet(
           context: context,
           isScrollControlled: true,
+          useSafeArea: true,
           backgroundColor: Colors.white,
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
           builder: (_) => const AddEditChildSheet(),
