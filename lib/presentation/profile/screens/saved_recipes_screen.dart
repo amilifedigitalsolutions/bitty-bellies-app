@@ -102,6 +102,7 @@ void _showAddOrEditChild(BuildContext context, WidgetRef ref, {Child? existing})
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    backgroundColor: Colors.white,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
     builder: (_) => AddEditChildSheet(existing: existing),
   );
@@ -388,7 +389,7 @@ class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: Theme.of(context).textTheme.titleSmall),
+        Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.black)),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -404,7 +405,18 @@ class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    // White sheet, black labels — deliberately overriding the app's usual
+    // cream/tan theme for just this sheet, not a global InputDecorationTheme
+    // change.
+    final theme = Theme.of(context).copyWith(
+      inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
+            labelStyle: const TextStyle(color: Colors.black),
+            floatingLabelStyle: const TextStyle(color: Colors.black),
+          ),
+    );
+    return Theme(
+      data: theme,
+      child: SafeArea(
       child: Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 24),
       child: SingleChildScrollView(
@@ -412,7 +424,10 @@ class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.existing != null ? 'Edit child' : 'Add child', style: Theme.of(context).textTheme.headlineMedium),
+          Text(
+            widget.existing != null ? 'Edit child' : 'Add child',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.black),
+          ),
           const SizedBox(height: 20),
           AppTextField(controller: _nameCtrl, label: "Child's name"),
           const SizedBox(height: 12),
@@ -464,6 +479,7 @@ class _AddEditChildSheetState extends ConsumerState<AddEditChildSheet> {
           ),
         ],
         ),
+      ),
       ),
       ),
     );
